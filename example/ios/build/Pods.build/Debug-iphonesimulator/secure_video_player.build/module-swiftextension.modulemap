@@ -1,4 +1,0 @@
-
-module secure_video_player.Swift {
-  header "secure_video_player-Swift.h"
-}

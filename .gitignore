@@ -35,3 +35,4 @@ migrate_working_dir/
 # CocoaPods
 example/ios/Pods/
 example/ios/.symlinks/
+example/ios/build/
