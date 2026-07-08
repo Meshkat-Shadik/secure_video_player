@@ -57,8 +57,8 @@ final class FileCryptor {
             }
             defer { try? output.close() }
 
-            let total = (try? FileManager.default
-                .attributesOfItem(atPath: inputPath)[.size] as? Int64) ?? 0
+            let total = ((try? FileManager.default
+                .attributesOfItem(atPath: inputPath))?[.size] as? NSNumber)?.int64Value ?? 0
             var position: Int64 = 0
 
             while true {
@@ -66,7 +66,7 @@ final class FileCryptor {
                     try? output.close()
                     try? FileManager.default.removeItem(atPath: outputPath)
                     onProgress(Progress(operationId: id, bytesProcessed: position,
-                                        totalBytes: total ?? 0, done: true,
+                                        totalBytes: total, done: true,
                                         error: "Cancelled", errorCode: "unknown"))
                     return
                 }
@@ -76,10 +76,10 @@ final class FileCryptor {
                 output.write(data)
                 position += Int64(data.count)
                 onProgress(Progress(operationId: id, bytesProcessed: position,
-                                    totalBytes: total ?? 0, done: false))
+                                    totalBytes: total, done: false))
             }
             onProgress(Progress(operationId: id, bytesProcessed: position,
-                                totalBytes: total ?? 0, done: true))
+                                totalBytes: total, done: true))
             clear(id)
         }
         return id

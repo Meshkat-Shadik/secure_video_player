@@ -1,0 +1,4 @@
+
+module secure_video_player.__Swift {
+  exclude header "secure_video_player-Swift.h"
+}

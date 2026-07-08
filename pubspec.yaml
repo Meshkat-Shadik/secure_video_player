@@ -1,5 +1,5 @@
 name: secure_video_player
-description: "A new Flutter plugin project."
+description: "Encrypted-at-rest video playback with on-the-fly native decryption. Media3 (Android) + AVPlayer (iOS), pluggable ciphers, texture/platform-view rendering."
 version: 0.0.1
 homepage:
 

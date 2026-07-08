@@ -1,0 +1,10 @@
+framework module secure_video_player {
+  umbrella header "secure_video_player-umbrella.h"
+
+  export *
+  module * { export * }
+}
+
+module secure_video_player.Swift {
+  header "secure_video_player-Swift.h"
+}

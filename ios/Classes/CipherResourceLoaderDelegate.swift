@@ -36,12 +36,12 @@ final class CipherResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegat
         }
         defer { try? handle.close() }
 
-        let fileSize = (try? FileManager.default
-            .attributesOfItem(atPath: filePath)[.size] as? Int64) ?? 0
+        let fileSize = ((try? FileManager.default
+            .attributesOfItem(atPath: filePath))?[.size] as? NSNumber)?.int64Value ?? 0
 
         if let info = request.contentInformationRequest {
             info.contentType = contentType()
-            info.contentLength = adapter.plaintextSize(cipherFileSize: fileSize ?? 0)
+            info.contentLength = adapter.plaintextSize(cipherFileSize: fileSize)
             info.isByteRangeAccessSupported = true
         }
 
@@ -53,7 +53,7 @@ final class CipherResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegat
         var position = dataRequest.requestedOffset
         var remaining = Int64(dataRequest.requestedLength)
         if dataRequest.requestsAllDataToEndOfResource {
-            remaining = (fileSize ?? 0) - position
+            remaining = fileSize - position
         }
 
         while remaining > 0 {

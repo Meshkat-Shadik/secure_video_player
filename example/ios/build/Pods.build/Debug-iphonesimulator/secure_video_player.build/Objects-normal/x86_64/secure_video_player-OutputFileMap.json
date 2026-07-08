@@ -1,0 +1,69 @@
+{
+  "" : {
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/secure_video_player-primary.dia",
+    "emit-module-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/secure_video_player-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/secure_video_player-primary-emit-module.dia",
+    "pch" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/secure_video_player-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/secure_video_player-primary.swiftdeps"
+  },
+  "/Users/mesh/Downloads/secure_video_player/ios/Classes/CipherAdapter.swift" : {
+    "const-values" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.swiftconstvalues",
+    "dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.d",
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.dia",
+    "index-unit-output-path" : "/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.o",
+    "llvm-bc" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.bc",
+    "object" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.o",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter.swiftdeps",
+    "swiftmodule" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherAdapter~partial.swiftmodule"
+  },
+  "/Users/mesh/Downloads/secure_video_player/ios/Classes/CipherResourceLoaderDelegate.swift" : {
+    "const-values" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.swiftconstvalues",
+    "dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.d",
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.dia",
+    "index-unit-output-path" : "/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.o",
+    "llvm-bc" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.bc",
+    "object" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.o",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate.swiftdeps",
+    "swiftmodule" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/CipherResourceLoaderDelegate~partial.swiftmodule"
+  },
+  "/Users/mesh/Downloads/secure_video_player/ios/Classes/FileCryptor.swift" : {
+    "const-values" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.swiftconstvalues",
+    "dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.d",
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.dia",
+    "index-unit-output-path" : "/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.o",
+    "llvm-bc" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.bc",
+    "object" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.o",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor.swiftdeps",
+    "swiftmodule" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/FileCryptor~partial.swiftmodule"
+  },
+  "/Users/mesh/Downloads/secure_video_player/ios/Classes/Messages.g.swift" : {
+    "const-values" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.swiftconstvalues",
+    "dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.d",
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.dia",
+    "index-unit-output-path" : "/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.o",
+    "llvm-bc" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.bc",
+    "object" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.o",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g.swiftdeps",
+    "swiftmodule" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/Messages.g~partial.swiftmodule"
+  },
+  "/Users/mesh/Downloads/secure_video_player/ios/Classes/PlayerInstance.swift" : {
+    "const-values" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.swiftconstvalues",
+    "dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.d",
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.dia",
+    "index-unit-output-path" : "/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.o",
+    "llvm-bc" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.bc",
+    "object" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.o",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance.swiftdeps",
+    "swiftmodule" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/PlayerInstance~partial.swiftmodule"
+  },
+  "/Users/mesh/Downloads/secure_video_player/ios/Classes/SecureVideoPlayerPlugin.swift" : {
+    "const-values" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.swiftconstvalues",
+    "dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.d",
+    "diagnostics" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.dia",
+    "index-unit-output-path" : "/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.o",
+    "llvm-bc" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.bc",
+    "object" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.o",
+    "swift-dependencies" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin.swiftdeps",
+    "swiftmodule" : "/Users/mesh/Downloads/secure_video_player/example/ios/build/Pods.build/Debug-iphonesimulator/secure_video_player.build/Objects-normal/x86_64/SecureVideoPlayerPlugin~partial.swiftmodule"
+  }
+}
