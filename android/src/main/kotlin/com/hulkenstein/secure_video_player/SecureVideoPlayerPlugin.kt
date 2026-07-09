@@ -65,7 +65,7 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         context = flutterPluginBinding.applicationContext
         SecureVideoHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
 
-        EventChannel(flutterPluginBinding.binaryMessenger, "secure_video_player/crypto_events")
+        EventChannel(flutterPluginBinding.binaryMessenger, SvpProtocol.CHANNEL_CRYPTO_EVENTS)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(args: Any?, sink: EventChannel.EventSink) {
                     cryptoEvents.setDelegate(sink)
@@ -75,7 +75,7 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
             })
 
         flutterPluginBinding.platformViewRegistry.registerViewFactory(
-            "secure_video_player/platform_view",
+            SvpProtocol.PLATFORM_VIEW_TYPE,
             PlayerPlatformViewFactory(players),
         )
     }
@@ -109,22 +109,22 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
 
     override fun create(request: CreateRequest): CreateResponse {
         val schemeType = request.schemeType
-        if (schemeType != "clearKey" && !CipherRegistry.isRegistered(schemeType)) {
-            throw FlutterError("adapterNotRegistered",
+        if (schemeType != SvpProtocol.SCHEME_CLEAR_KEY && !CipherRegistry.isRegistered(schemeType)) {
+            throw FlutterError(SvpProtocol.ERROR_ADAPTER_NOT_REGISTERED,
                 "No CipherAdapter registered for '$schemeType'. " +
                     "Call CipherRegistry.register(\"$schemeType\") { ... } at app startup.")
         }
 
         val resolved = when (request.sourceType) {
-            "asset" -> copyAssetToCache(request.source)
+            SvpProtocol.SOURCE_ASSET -> copyAssetToCache(request.source)
             else -> request.source
         }
-        if (request.sourceType != "url" && !File(resolved).exists()) {
-            throw FlutterError("fileNotFound", "File not found: $resolved")
+        if (request.sourceType != SvpProtocol.SOURCE_URL && !File(resolved).exists()) {
+            throw FlutterError(SvpProtocol.ERROR_FILE_NOT_FOUND, "File not found: $resolved")
         }
 
         val playerId = nextPlayerId++
-        val useTexture = request.renderMode == "texture"
+        val useTexture = request.renderMode == SvpProtocol.RENDER_TEXTURE
         val surfaceProducer =
             if (useTexture) binding.textureRegistry.createSurfaceProducer() else null
 
@@ -150,12 +150,12 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
             ) { activity }
         } catch (e: IllegalArgumentException) {
             surfaceProducer?.release()
-            throw FlutterError("invalidKey", e.message ?: "Invalid scheme parameters")
+            throw FlutterError(SvpProtocol.ERROR_INVALID_KEY, e.message ?: "Invalid scheme parameters")
         }
 
         players[playerId] = instance
         val channel =
-            EventChannel(binding.binaryMessenger, "secure_video_player/events_$playerId")
+            EventChannel(binding.binaryMessenger, SvpProtocol.playerEventsChannel(playerId))
         channel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(args: Any?, sink: EventChannel.EventSink) {
                 instance.events.setDelegate(sink)
@@ -181,7 +181,7 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
     }
 
     private fun instance(playerId: Long): PlayerInstance =
-        players[playerId] ?: throw FlutterError("disposed", "No player $playerId")
+        players[playerId] ?: throw FlutterError(SvpProtocol.ERROR_DISPOSED, "No player $playerId")
 
     override fun dispose(playerId: Long) {
         players.remove(playerId)?.dispose()
@@ -235,8 +235,8 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         schemeParams: Map<String?, Any?>,
         encrypt: Boolean,
     ): String {
-        if (schemeType == "clearKey") {
-            throw FlutterError("platformNotSupported",
+        if (schemeType == SvpProtocol.SCHEME_CLEAR_KEY) {
+            throw FlutterError(SvpProtocol.ERROR_PLATFORM_NOT_SUPPORTED,
                 "clearKey content is packaged with CENC tooling, not by this encryptor")
         }
         val adapter = try {
@@ -245,16 +245,16 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
                 schemeParams.entries.associate { (k, v) -> (k ?: "") to v },
             )
         } catch (e: IllegalArgumentException) {
-            throw FlutterError("adapterNotRegistered", e.message ?: schemeType)
+            throw FlutterError(SvpProtocol.ERROR_ADAPTER_NOT_REGISTERED, e.message ?: schemeType)
         }
         return FileCryptor.start(inputPath, outputPath, adapter) { p ->
             cryptoEvents.success(mapOf(
-                "operationId" to p.operationId,
-                "bytesProcessed" to p.bytesProcessed,
-                "totalBytes" to p.totalBytes,
-                "done" to p.done,
-                "error" to p.error,
-                "errorCode" to p.errorCode,
+                SvpProtocol.KEY_OPERATION_ID to p.operationId,
+                SvpProtocol.KEY_BYTES_PROCESSED to p.bytesProcessed,
+                SvpProtocol.KEY_TOTAL_BYTES to p.totalBytes,
+                SvpProtocol.KEY_DONE to p.done,
+                SvpProtocol.KEY_ERROR to p.error,
+                SvpProtocol.KEY_ERROR_CODE to p.errorCode,
             ).filterValues { it != null })
         }
     }
@@ -269,7 +269,7 @@ class PlayerPlatformViewFactory(
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
-        val playerId = ((args as? Map<*, *>)?.get("playerId") as? Number)?.toLong()
+        val playerId = ((args as? Map<*, *>)?.get(SvpProtocol.KEY_PLAYER_ID) as? Number)?.toLong()
         val playerView = PlayerView(context).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
             useController = true

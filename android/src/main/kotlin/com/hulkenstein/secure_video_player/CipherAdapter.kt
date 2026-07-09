@@ -29,9 +29,9 @@ object CipherRegistry {
     private val factories = mutableMapOf<String, () -> CipherAdapter>()
 
     init {
-        register("none") { NoneAdapter() }
-        register("xorLegacy") { XorLegacyAdapter() }
-        register("aesCtr") { AesCtrAdapter() }
+        register(SvpProtocol.SCHEME_NONE) { NoneAdapter() }
+        register(SvpProtocol.SCHEME_XOR_LEGACY) { XorLegacyAdapter() }
+        register(SvpProtocol.SCHEME_AES_CTR) { AesCtrAdapter() }
     }
 
     @Synchronized

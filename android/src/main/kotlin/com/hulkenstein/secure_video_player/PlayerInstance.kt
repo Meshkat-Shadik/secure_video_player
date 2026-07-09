@@ -134,9 +134,9 @@ class PlayerInstance(
     // ---- media source ----
 
     private fun buildMediaSource(): MediaSource {
-        if (adapterName == "clearKey") return buildClearKeySource()
+        if (adapterName == SvpProtocol.SCHEME_CLEAR_KEY) return buildClearKeySource()
 
-        if (adapterName == "none" && request.sourceType == "url") {
+        if (adapterName == SvpProtocol.SCHEME_NONE && request.sourceType == SvpProtocol.SOURCE_URL) {
             // Plain streaming (HTTP progressive / HLS / DASH via sniffing).
             return DefaultMediaSourceFactory(DefaultDataSource.Factory(context))
                 .createMediaSource(MediaItem.fromUri(request.source))
@@ -180,7 +180,7 @@ class PlayerInstance(
             .setUuidAndExoMediaDrmProvider(C.CLEARKEY_UUID, FrameworkMediaDrm.DEFAULT_PROVIDER)
             .build(drmCallback)
 
-        val uri = if (request.sourceType == "url") Uri.parse(request.source)
+        val uri = if (request.sourceType == SvpProtocol.SOURCE_URL) Uri.parse(request.source)
         else Uri.fromFile(java.io.File(request.source))
         val dataFactory = DefaultDataSource.Factory(context)
         val item = MediaItem.fromUri(uri)
@@ -204,58 +204,58 @@ class PlayerInstance(
                     initializedSent = true
                     val size = player.videoSize
                     events.success(mapOf(
-                        "event" to "initialized",
-                        "duration" to maxOf(0L, player.duration),
-                        "width" to size.width,
-                        "height" to size.height,
+                        SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_INITIALIZED,
+                        SvpProtocol.KEY_DURATION to maxOf(0L, player.duration),
+                        SvpProtocol.KEY_WIDTH to size.width,
+                        SvpProtocol.KEY_HEIGHT to size.height,
                     ))
                     handler.post(positionTicker)
                 } else {
-                    events.success(mapOf("event" to "ready"))
+                    events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_READY))
                 }
             }
-            Player.STATE_BUFFERING -> events.success(mapOf("event" to "buffering"))
-            Player.STATE_ENDED -> events.success(mapOf("event" to "completed"))
+            Player.STATE_BUFFERING -> events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_BUFFERING))
+            Player.STATE_ENDED -> events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_COMPLETED))
             else -> {}
         }
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
-        events.success(mapOf("event" to "isPlayingChanged", "isPlaying" to isPlaying))
+        events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_IS_PLAYING_CHANGED, SvpProtocol.KEY_IS_PLAYING to isPlaying))
         sendPosition()
     }
 
     override fun onVideoSizeChanged(videoSize: VideoSize) {
         if (videoSize.width > 0 && videoSize.height > 0) {
             events.success(mapOf(
-                "event" to "videoSize",
-                "width" to videoSize.width,
-                "height" to videoSize.height,
+                SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_VIDEO_SIZE,
+                SvpProtocol.KEY_WIDTH to videoSize.width,
+                SvpProtocol.KEY_HEIGHT to videoSize.height,
             ))
         }
     }
 
     override fun onPlayerError(error: PlaybackException) {
         val code = when {
-            error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> "fileNotFound"
+            error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> SvpProtocol.ERROR_FILE_NOT_FOUND
             error.errorCode in PlaybackException.ERROR_CODE_DRM_UNSPECIFIED..
-                PlaybackException.ERROR_CODE_DRM_LICENSE_EXPIRED -> "drmError"
+                PlaybackException.ERROR_CODE_DRM_LICENSE_EXPIRED -> SvpProtocol.ERROR_DRM
             error.errorCode in PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED..
-                PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED -> "corruptStream"
-            else -> "unknown"
+                PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED -> SvpProtocol.ERROR_CORRUPT_STREAM
+            else -> SvpProtocol.ERROR_UNKNOWN
         }
         events.success(mapOf(
-            "event" to "error",
-            "code" to code,
-            "message" to (error.message ?: "Playback error"),
+            SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_ERROR,
+            SvpProtocol.KEY_CODE to code,
+            SvpProtocol.KEY_MESSAGE to (error.message ?: "Playback error"),
         ))
     }
 
     private fun sendPosition() {
         events.success(mapOf(
-            "event" to "position",
-            "position" to player.currentPosition,
-            "buffered" to player.bufferedPosition,
+            SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_POSITION,
+            SvpProtocol.KEY_POSITION to player.currentPosition,
+            SvpProtocol.KEY_BUFFERED to player.bufferedPosition,
         ))
     }
 
@@ -278,9 +278,9 @@ class PlayerInstance(
     // ---- tracks ----
 
     private fun trackTypeOf(type: String): Int = when (type) {
-        "audio" -> C.TRACK_TYPE_AUDIO
-        "subtitle" -> C.TRACK_TYPE_TEXT
-        "video" -> C.TRACK_TYPE_VIDEO
+        SvpProtocol.TRACK_AUDIO -> C.TRACK_TYPE_AUDIO
+        SvpProtocol.TRACK_SUBTITLE -> C.TRACK_TYPE_TEXT
+        SvpProtocol.TRACK_VIDEO -> C.TRACK_TYPE_VIDEO
         else -> throw IllegalArgumentException("Unknown track type: $type")
     }
 
@@ -312,7 +312,7 @@ class PlayerInstance(
             .clearOverridesOfType(trackType)
         if (trackId == null) {
             // Off for subtitles, auto for audio/video.
-            builder.setTrackTypeDisabled(trackType, type == "subtitle")
+            builder.setTrackTypeDisabled(trackType, type == SvpProtocol.TRACK_SUBTITLE)
         } else {
             val (groupIndex, trackIndex) = trackId.split(":").map { it.toInt() }
             val group = player.currentTracks.groups[groupIndex]
@@ -355,7 +355,7 @@ class PlayerInstance(
         return try {
             activity.enterPictureInPictureMode(
                 PictureInPictureParams.Builder().setAspectRatio(ratio).build())
-            events.success(mapOf("event" to "pipChanged", "active" to true))
+            events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_PIP_CHANGED, SvpProtocol.KEY_ACTIVE to true))
             true
         } catch (e: IllegalStateException) {
             false

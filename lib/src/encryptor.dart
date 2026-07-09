@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'crypto_scheme.dart';
 import 'errors.dart';
 import 'messages.g.dart';
+import 'protocol.dart';
 
 /// Progress of an encrypt/decrypt file transform.
 class CryptoProgress {
@@ -42,7 +43,7 @@ class SecureVideoEncryptor {
   SecureVideoEncryptor._();
 
   static const EventChannel _events =
-      EventChannel('secure_video_player/crypto_events');
+      EventChannel(SvpChannels.cryptoEvents);
   static Stream<dynamic>? _broadcast;
 
   static Future<CryptoOperation> encrypt(
@@ -66,19 +67,19 @@ class SecureVideoEncryptor {
 
     _broadcast ??= _events.receiveBroadcastStream().asBroadcastStream();
     final progress = _broadcast!
-        .where((e) => e is Map && e['operationId'] == id)
+        .where((e) => e is Map && e[SvpCryptoEvents.keyOperationId] == id)
         .map((e) {
           final m = (e as Map).cast<String, Object?>();
-          final error = m['error'] as String?;
+          final error = m[SvpCryptoEvents.keyError] as String?;
           if (error != null) {
             throw SecureVideoException(
-                SecureVideoErrorCode.fromWire(m['errorCode'] as String?),
+                SecureVideoErrorCode.fromWire(m[SvpCryptoEvents.keyErrorCode] as String?),
                 error);
           }
           return CryptoProgress(
-            bytesProcessed: (m['bytesProcessed'] as num?)?.toInt() ?? 0,
-            totalBytes: (m['totalBytes'] as num?)?.toInt() ?? 0,
-            done: m['done'] == true,
+            bytesProcessed: (m[SvpCryptoEvents.keyBytesProcessed] as num?)?.toInt() ?? 0,
+            totalBytes: (m[SvpCryptoEvents.keyTotalBytes] as num?)?.toInt() ?? 0,
+            done: m[SvpCryptoEvents.keyDone] == true,
           );
         })
         .takeWhileInclusive((p) => !p.done);

@@ -35,9 +35,9 @@ public final class CipherRegistry {
     private let lock = NSLock()
 
     private init() {
-        register("none") { NoneAdapter() }
-        register("xorLegacy") { XorLegacyAdapter() }
-        register("aesCtr") { AesCtrAdapter() }
+        register(SvpProtocol.schemeNone) { NoneAdapter() }
+        register(SvpProtocol.schemeXorLegacy) { XorLegacyAdapter() }
+        register(SvpProtocol.schemeAesCtr) { AesCtrAdapter() }
     }
 
     public func register(_ name: String, factory: @escaping () -> CipherAdapter) {

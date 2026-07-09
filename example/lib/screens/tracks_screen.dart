@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:secure_video_player/secure_video_player.dart';
 
 import '../demo_crypto.dart';
@@ -94,7 +95,16 @@ class _TracksScreenState extends State<TracksScreen> {
               ],
             ),
           ),
-          Expanded(child: SecureVideoPlayer(controller: controller)),
+          Expanded(
+            child: SecureVideoPlayer(
+              controller: controller,
+              // App-lock demo: after leaving fullscreen, re-apply portrait
+              // instead of unlocking every orientation.
+              restoreOrientationsAfterFullscreen: const [
+                DeviceOrientation.portraitUp,
+              ],
+            ),
+          ),
         ],
       ),
     );

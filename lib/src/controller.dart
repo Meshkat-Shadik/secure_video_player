@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'crypto_scheme.dart';
 import 'errors.dart';
 import 'messages.g.dart';
+import 'protocol.dart';
 import 'player_options.dart';
 
 enum SecureVideoState { uninitialized, buffering, ready, completed, error }
@@ -116,6 +117,7 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
   RenderMode _renderMode = RenderMode.texture;
   StreamSubscription<dynamic>? _eventSub;
   Completer<void>? _readyCompleter;
+  Future<CreateResponse>? _pendingCreate;
   bool _disposed = false;
 
   int? get playerId => _playerId;
@@ -137,7 +139,7 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
 
     final CreateResponse response;
     try {
-      response = await _api.create(CreateRequest(
+      _pendingCreate = _api.create(CreateRequest(
         sourceType: source.type,
         source: source.value,
         schemeType: scheme.type,
@@ -151,8 +153,24 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
         maxBufferMs: options.buffer.maxBufferMs,
         bufferForPlaybackMs: options.buffer.bufferForPlaybackMs,
       ));
+      response = await _pendingCreate!;
     } on PlatformException catch (e) {
+      _pendingCreate = null;
       throw SecureVideoException.fromPlatform(e);
+    }
+    _pendingCreate = null;
+
+    // Widget popped while create() was in flight — release the native
+    // player immediately or it keeps decoding forever (issue #1).
+    if (_disposed) {
+      _readyCompleter?.future.ignore();
+      try {
+        await _api.dispose(response.playerId);
+      } on PlatformException {
+        // Already gone natively.
+      }
+      throw SecureVideoException(
+          SecureVideoErrorCode.disposed, 'Controller was disposed');
     }
 
     _playerId = response.playerId;
@@ -163,7 +181,7 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
       volume: options.volume,
     );
 
-    _eventSub = EventChannel('secure_video_player/events_${response.playerId}')
+    _eventSub = EventChannel(SvpChannels.playerEvents(response.playerId))
         .receiveBroadcastStream()
         .listen(_onEvent, onError: _onEventError);
 
@@ -172,44 +190,44 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
 
   void _onEvent(dynamic event) {
     final m = (event as Map).cast<String, Object?>();
-    switch (m['event']) {
-      case 'initialized':
+    switch (m[SvpEvents.key]) {
+      case SvpEvents.initialized:
         value = value.copyWith(
           state: SecureVideoState.ready,
-          duration: Duration(milliseconds: (m['duration'] as num).toInt()),
-          size: Size((m['width'] as num?)?.toDouble() ?? 0,
-              (m['height'] as num?)?.toDouble() ?? 0),
+          duration: Duration(milliseconds: (m[SvpEvents.keyDuration] as num).toInt()),
+          size: Size((m[SvpEvents.keyWidth] as num?)?.toDouble() ?? 0,
+              (m[SvpEvents.keyHeight] as num?)?.toDouble() ?? 0),
         );
         if (!(_readyCompleter?.isCompleted ?? true)) {
           _readyCompleter!.complete();
         }
-      case 'buffering':
+      case SvpEvents.buffering:
         value = value.copyWith(state: SecureVideoState.buffering);
-      case 'ready':
+      case SvpEvents.ready:
         if (value.state != SecureVideoState.uninitialized) {
           value = value.copyWith(state: SecureVideoState.ready);
         }
-      case 'position':
+      case SvpEvents.position:
         value = value.copyWith(
-          position: Duration(milliseconds: (m['position'] as num).toInt()),
+          position: Duration(milliseconds: (m[SvpEvents.keyPosition] as num).toInt()),
           buffered:
-              Duration(milliseconds: (m['buffered'] as num?)?.toInt() ?? 0),
+              Duration(milliseconds: (m[SvpEvents.keyBuffered] as num?)?.toInt() ?? 0),
         );
-      case 'isPlayingChanged':
-        value = value.copyWith(isPlaying: m['isPlaying'] == true);
-      case 'videoSize':
+      case SvpEvents.isPlayingChanged:
+        value = value.copyWith(isPlaying: m[SvpEvents.keyIsPlaying] == true);
+      case SvpEvents.videoSize:
         value = value.copyWith(
-            size: Size((m['width'] as num).toDouble(),
-                (m['height'] as num).toDouble()));
-      case 'completed':
+            size: Size((m[SvpEvents.keyWidth] as num).toDouble(),
+                (m[SvpEvents.keyHeight] as num).toDouble()));
+      case SvpEvents.completed:
         value = value.copyWith(
             state: SecureVideoState.completed, isPlaying: false);
-      case 'pipChanged':
-        value = value.copyWith(isPipActive: m['active'] == true);
-      case 'error':
+      case SvpEvents.pipChanged:
+        value = value.copyWith(isPipActive: m[SvpEvents.keyActive] == true);
+      case SvpEvents.error:
         final error = SecureVideoException(
-            SecureVideoErrorCode.fromWire(m['code'] as String?),
-            (m['message'] as String?) ?? 'Unknown player error');
+            SecureVideoErrorCode.fromWire(m[SvpEvents.keyCode] as String?),
+            (m[SvpEvents.keyMessage] as String?) ?? 'Unknown player error');
         value = value.copyWith(state: SecureVideoState.error, error: error);
         if (!(_readyCompleter?.isCompleted ?? true)) {
           _readyCompleter!.completeError(error);
@@ -310,6 +328,12 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    // Unblock anyone still awaiting initialize().
+    if (!(_readyCompleter?.isCompleted ?? true)) {
+      _readyCompleter!.future.ignore();
+      _readyCompleter!.completeError(SecureVideoException(
+          SecureVideoErrorCode.disposed, 'Controller was disposed'));
+    }
     await _eventSub?.cancel();
     final id = _playerId;
     _playerId = null;
@@ -320,6 +344,8 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
         // Native side already gone — nothing to release.
       }
     }
+    // If create() is still in flight, the initialize() continuation sees
+    // _disposed and releases the native player itself.
     super.dispose();
   }
 }

@@ -11,10 +11,18 @@ class SecureVideoControls extends StatefulWidget {
     super.key,
     required this.controller,
     this.autoHide = const Duration(seconds: 3),
+    this.isFullscreen = false,
+    this.onToggleFullscreen,
   });
 
   final SecureVideoController controller;
   final Duration autoHide;
+
+  /// True when rendered inside the fullscreen route (button shows exit icon).
+  final bool isFullscreen;
+
+  /// Null hides the fullscreen button.
+  final VoidCallback? onToggleFullscreen;
 
   @override
   State<SecureVideoControls> createState() => _SecureVideoControlsState();
@@ -173,6 +181,16 @@ class _SecureVideoControlsState extends State<SecureVideoControls> {
                   onPressed: () =>
                       _c.setVolume(v.volume == 0 ? 1.0 : 0.0),
                 ),
+                if (widget.onToggleFullscreen != null)
+                  IconButton(
+                    icon: Icon(
+                      widget.isFullscreen
+                          ? Icons.fullscreen_exit
+                          : Icons.fullscreen,
+                      color: Colors.white,
+                    ),
+                    onPressed: widget.onToggleFullscreen,
+                  ),
               ],
             ),
           ),

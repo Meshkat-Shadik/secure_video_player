@@ -15,5 +15,6 @@ export 'src/crypto_scheme.dart';
 export 'src/encryptor.dart';
 export 'src/errors.dart';
 export 'src/player_options.dart';
+export 'src/protocol.dart' show SvpTrackTypes;
 export 'src/widgets/controls.dart';
 export 'src/widgets/player_view.dart';

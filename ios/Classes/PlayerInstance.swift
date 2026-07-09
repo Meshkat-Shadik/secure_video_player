@@ -69,8 +69,8 @@ final class PlayerInstance: NSObject, FlutterTexture {
         }
 
         let asset: AVURLAsset
-        if request.schemeType == "none" {
-            let url = request.sourceType == "url"
+        if request.schemeType == SvpProtocol.schemeNone {
+            let url = request.sourceType == SvpProtocol.sourceUrl
                 ? URL(string: resolvedPath)!
                 : URL(fileURLWithPath: resolvedPath)
             asset = AVURLAsset(url: url)
@@ -91,7 +91,7 @@ final class PlayerInstance: NSObject, FlutterTexture {
 
         super.init()
 
-        if request.renderMode == "texture" {
+        if request.renderMode == SvpProtocol.renderTexture {
             let attrs: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
                 kCVPixelBufferIOSurfacePropertiesKey as String: [:],
@@ -160,28 +160,28 @@ final class PlayerInstance: NSObject, FlutterTexture {
                 let message = item.error?.localizedDescription ?? "Playback failed"
                 // Decryption failures surface as unparseable media.
                 let code = (item.error as NSError?)?.domain == "svp"
-                    ? "fileNotFound" : "corruptStream"
+                    ? SvpProtocol.errorFileNotFound : SvpProtocol.errorCorruptStream
                 events.success([
-                    "event": "error", "code": code, "message": message,
+                    SvpProtocol.eventKey: SvpProtocol.eventError, SvpProtocol.keyCode: code, SvpProtocol.keyMessage: message,
                 ])
             }
         case "presentationSize":
             let size = item.presentationSize
             if size.width > 0, size.height > 0 {
                 events.success([
-                    "event": "videoSize",
-                    "width": Int(size.width), "height": Int(size.height),
+                    SvpProtocol.eventKey: SvpProtocol.eventVideoSize,
+                    SvpProtocol.keyWidth: Int(size.width), SvpProtocol.keyHeight: Int(size.height),
                 ])
             }
         case "playbackBufferEmpty":
-            if item.isPlaybackBufferEmpty { events.success(["event": "buffering"]) }
+            if item.isPlaybackBufferEmpty { events.success([SvpProtocol.eventKey: SvpProtocol.eventBuffering]) }
         case "playbackLikelyToKeepUp":
             if item.isPlaybackLikelyToKeepUp, initializedSent {
-                events.success(["event": "ready"])
+                events.success([SvpProtocol.eventKey: SvpProtocol.eventReady])
             }
         case "timeControlStatus":
             let playing = player.timeControlStatus == .playing
-            events.success(["event": "isPlayingChanged", "isPlaying": playing])
+            events.success([SvpProtocol.eventKey: SvpProtocol.eventIsPlayingChanged, SvpProtocol.keyIsPlaying: playing])
             if playing {
                 startTicker()
                 displayLink?.isPaused = false
@@ -198,10 +198,10 @@ final class PlayerInstance: NSObject, FlutterTexture {
         let ms = duration.isNumeric ? Int64(CMTimeGetSeconds(duration) * 1000) : 0
         let size = item.presentationSize
         events.success([
-            "event": "initialized",
-            "duration": max(0, ms),
-            "width": Int(size.width),
-            "height": Int(size.height),
+            SvpProtocol.eventKey: SvpProtocol.eventInitialized,
+            SvpProtocol.keyDuration: max(0, ms),
+            SvpProtocol.keyWidth: Int(size.width),
+            SvpProtocol.keyHeight: Int(size.height),
         ])
         if videoOutput != nil {
             let link = CADisplayLink(target: self, selector: #selector(onDisplayLink(_:)))
@@ -217,7 +217,7 @@ final class PlayerInstance: NSObject, FlutterTexture {
             player.rate = desiredRate
         } else {
             player.pause()
-            events.success(["event": "completed"])
+            events.success([SvpProtocol.eventKey: SvpProtocol.eventCompleted])
         }
     }
 
@@ -235,9 +235,9 @@ final class PlayerInstance: NSObject, FlutterTexture {
             buffered = Int64(CMTimeGetSeconds(CMTimeAdd(range.start, range.duration)) * 1000)
         }
         events.success([
-            "event": "position",
-            "position": max(0, pos),
-            "buffered": max(0, buffered),
+            SvpProtocol.eventKey: SvpProtocol.eventPosition,
+            SvpProtocol.keyPosition: max(0, pos),
+            SvpProtocol.keyBuffered: max(0, buffered),
         ])
     }
 
@@ -275,8 +275,8 @@ final class PlayerInstance: NSObject, FlutterTexture {
     private func selectionGroup(for type: String) -> AVMediaSelectionGroup? {
         let characteristic: AVMediaCharacteristic
         switch type {
-        case "audio": characteristic = .audible
-        case "subtitle": characteristic = .legible
+        case SvpProtocol.trackAudio: characteristic = .audible
+        case SvpProtocol.trackSubtitle: characteristic = .legible
         default: return nil
         }
         return item.asset.mediaSelectionGroup(forMediaCharacteristic: characteristic)
@@ -313,7 +313,7 @@ final class PlayerInstance: NSObject, FlutterTexture {
     func enterPictureInPicture() -> Bool {
         guard let pip = pipController, pip.isPictureInPicturePossible else { return false }
         pip.startPictureInPicture()
-        events.success(["event": "pipChanged", "active": true])
+        events.success([SvpProtocol.eventKey: SvpProtocol.eventPipChanged, SvpProtocol.keyActive: true])
         return true
     }
 

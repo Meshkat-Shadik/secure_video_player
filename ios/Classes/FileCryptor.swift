@@ -14,13 +14,13 @@ final class FileCryptor {
 
         var asMap: [String: Any] {
             var m: [String: Any] = [
-                "operationId": operationId,
-                "bytesProcessed": bytesProcessed,
-                "totalBytes": totalBytes,
-                "done": done,
+                SvpProtocol.keyOperationId: operationId,
+                SvpProtocol.keyBytesProcessed: bytesProcessed,
+                SvpProtocol.keyTotalBytes: totalBytes,
+                SvpProtocol.keyDone: done,
             ]
-            if let error { m["error"] = error }
-            if let errorCode { m["errorCode"] = errorCode }
+            if let error { m[SvpProtocol.keyError] = error }
+            if let errorCode { m[SvpProtocol.keyErrorCode] = errorCode }
             return m
         }
     }
@@ -43,7 +43,7 @@ final class FileCryptor {
             guard let input = FileHandle(forReadingAtPath: inputPath) else {
                 onProgress(Progress(operationId: id, bytesProcessed: 0, totalBytes: 0,
                                     done: true, error: "Input not found: \(inputPath)",
-                                    errorCode: "fileNotFound"))
+                                    errorCode: SvpProtocol.errorFileNotFound))
                 return
             }
             defer { try? input.close() }
@@ -52,7 +52,7 @@ final class FileCryptor {
             guard let output = FileHandle(forWritingAtPath: outputPath) else {
                 onProgress(Progress(operationId: id, bytesProcessed: 0, totalBytes: 0,
                                     done: true, error: "Cannot write: \(outputPath)",
-                                    errorCode: "corruptStream"))
+                                    errorCode: SvpProtocol.errorCorruptStream))
                 return
             }
             defer { try? output.close() }
@@ -67,7 +67,7 @@ final class FileCryptor {
                     try? FileManager.default.removeItem(atPath: outputPath)
                     onProgress(Progress(operationId: id, bytesProcessed: position,
                                         totalBytes: total, done: true,
-                                        error: "Cancelled", errorCode: "unknown"))
+                                        error: "Cancelled", errorCode: SvpProtocol.errorUnknown))
                     return
                 }
                 var data = input.readData(ofLength: chunk)

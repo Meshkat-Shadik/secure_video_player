@@ -19,13 +19,13 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
             binaryMessenger: registrar.messenger(), api: instance)
 
         let cryptoChannel = FlutterEventChannel(
-            name: "secure_video_player/crypto_events",
+            name: SvpProtocol.channelCryptoEvents,
             binaryMessenger: registrar.messenger())
         cryptoChannel.setStreamHandler(SinkStreamHandler(sink: instance.cryptoEvents))
 
         registrar.register(
             PlayerPlatformViewFactory(plugin: instance),
-            withId: "secure_video_player/platform_view")
+            withId: SvpProtocol.platformViewType)
 
         instance.observeAppLifecycle()
     }
@@ -60,35 +60,35 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
     // ---- SecureVideoHostApi ----
 
     func create(request: CreateRequest) throws -> CreateResponse {
-        if request.schemeType == "clearKey" {
+        if request.schemeType == SvpProtocol.schemeClearKey {
             throw PigeonError(
-                code: "platformNotSupported",
+                code: SvpProtocol.errorPlatformNotSupported,
                 message: "ClearKey DRM is Android-only. Use aesCtr on iOS.",
                 details: nil)
         }
         if !CipherRegistry.shared.isRegistered(request.schemeType) {
             throw PigeonError(
-                code: "adapterNotRegistered",
+                code: SvpProtocol.errorAdapterNotRegistered,
                 message: "No CipherAdapter registered for '\(request.schemeType)'. "
                     + "Call CipherRegistry.shared.register(\"\(request.schemeType)\") in AppDelegate.",
                 details: nil)
         }
 
         var resolved = request.source
-        if request.sourceType == "asset" {
+        if request.sourceType == SvpProtocol.sourceAsset {
             guard let registrar,
                   let path = Bundle.main.path(
                       forResource: registrar.lookupKey(forAsset: request.source),
                       ofType: nil)
             else {
-                throw PigeonError(code: "fileNotFound",
+                throw PigeonError(code: SvpProtocol.errorFileNotFound,
                                   message: "Asset not found: \(request.source)",
                                   details: nil)
             }
             resolved = path
         }
-        if request.sourceType != "url", !FileManager.default.fileExists(atPath: resolved) {
-            throw PigeonError(code: "fileNotFound",
+        if request.sourceType != SvpProtocol.sourceUrl, !FileManager.default.fileExists(atPath: resolved) {
+            throw PigeonError(code: SvpProtocol.errorFileNotFound,
                               message: "File not found: \(resolved)", details: nil)
         }
 
@@ -103,13 +103,13 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
                 resolvedPath: resolved,
                 textureRegistry: registrar?.textures())
         } catch let error as CipherError {
-            throw PigeonError(code: "invalidKey",
+            throw PigeonError(code: SvpProtocol.errorInvalidKey,
                               message: error.localizedDescription, details: nil)
         }
 
         players[playerId] = instance
         let channel = FlutterEventChannel(
-            name: "secure_video_player/events_\(playerId)",
+            name: SvpProtocol.playerEventsChannel(playerId),
             binaryMessenger: registrar!.messenger())
         channel.setStreamHandler(SinkStreamHandler(sink: instance.events))
         eventChannels[playerId] = channel
@@ -121,7 +121,7 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
 
     private func instance(_ playerId: Int64) throws -> PlayerInstance {
         guard let p = players[playerId] else {
-            throw PigeonError(code: "disposed",
+            throw PigeonError(code: SvpProtocol.errorDisposed,
                               message: "No player \(playerId)", details: nil)
         }
         return p
@@ -169,7 +169,7 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
         // AVPlayer cannot sideload SRT/VTT without re-muxing. Embed subtitle
         // tracks in the MP4, or render them Flutter-side.
         throw PigeonError(
-            code: "platformNotSupported",
+            code: SvpProtocol.errorPlatformNotSupported,
             message: "External subtitles are not supported on iOS; "
                 + "embed the track in the container instead.",
             details: nil)
@@ -224,7 +224,7 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
         do {
             adapter = try CipherRegistry.shared.create(schemeType, params: params)
         } catch {
-            throw PigeonError(code: "adapterNotRegistered",
+            throw PigeonError(code: SvpProtocol.errorAdapterNotRegistered,
                               message: error.localizedDescription, details: nil)
         }
         return FileCryptor.shared.start(
@@ -269,7 +269,7 @@ final class PlayerPlatformViewFactory: NSObject, FlutterPlatformViewFactory {
 
     func create(withFrame frame: CGRect, viewIdentifier viewId: Int64,
                 arguments args: Any?) -> FlutterPlatformView {
-        let playerId = ((args as? [String: Any])?["playerId"] as? NSNumber)?.int64Value
+        let playerId = ((args as? [String: Any])?[SvpProtocol.keyPlayerId] as? NSNumber)?.int64Value
         let instance = playerId.flatMap { plugin?.playerInstance($0) }
         return PlayerPlatformView(frame: frame, instance: instance)
     }

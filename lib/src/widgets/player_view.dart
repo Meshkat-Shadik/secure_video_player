@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../controller.dart';
 import '../player_options.dart';
+import '../protocol.dart';
 import 'controls.dart';
 
 /// Renders a [SecureVideoController]'s video. Texture mode composes like any
@@ -15,11 +16,74 @@ class SecureVideoPlayer extends StatelessWidget {
     required this.controller,
     this.showControls = true,
     this.fit = BoxFit.contain,
-  });
+    this.allowFullscreen = true,
+    this.fullscreenOrientations,
+    this.restoreOrientationsAfterFullscreen,
+  }) : _isFullscreen = false;
+
+  const SecureVideoPlayer._fullscreen({
+    required this.controller,
+    required this.showControls,
+    required this.fit,
+  })  : allowFullscreen = true,
+        fullscreenOrientations = null,
+        restoreOrientationsAfterFullscreen = null,
+        _isFullscreen = true;
 
   final SecureVideoController controller;
   final bool showControls;
   final BoxFit fit;
+
+  /// Show the fullscreen button in the Flutter controls (texture mode).
+  final bool allowFullscreen;
+
+  /// Orientations forced while fullscreen. Default (null): landscape, or
+  /// portrait when the video is taller than wide.
+  final List<DeviceOrientation>? fullscreenOrientations;
+
+  /// Orientations re-applied when the player exits fullscreen. Set this to
+  /// your app's orientations (e.g. `[DeviceOrientation.portraitUp]`) if the
+  /// app runs under an orientation lock — otherwise leaving fullscreen would
+  /// override it. Default (null) restores all orientations (non-breaking).
+  final List<DeviceOrientation>? restoreOrientationsAfterFullscreen;
+
+  final bool _isFullscreen;
+
+  Future<void> _enterFullscreen(BuildContext context) async {
+    final orientations = fullscreenOrientations ??
+        (controller.value.aspectRatio < 1
+            ? const [DeviceOrientation.portraitUp]
+            : const [
+                DeviceOrientation.landscapeLeft,
+                DeviceOrientation.landscapeRight,
+              ]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    await SystemChrome.setPreferredOrientations(orientations);
+    if (!context.mounted) return;
+
+    await Navigator.of(context, rootNavigator: true).push<void>(
+      PageRouteBuilder(
+        opaque: true,
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            FadeTransition(
+          opacity: animation,
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: SecureVideoPlayer._fullscreen(
+              controller: controller,
+              showControls: showControls,
+              fit: fit,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await SystemChrome.setPreferredOrientations(
+        restoreOrientationsAfterFullscreen ?? DeviceOrientation.values);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +127,19 @@ class SecureVideoPlayer extends StatelessWidget {
               // controls would fight them for gestures.
               if (showControls &&
                   controller.renderMode == RenderMode.texture)
-                SecureVideoControls(controller: controller),
+                SecureVideoControls(
+                  controller: controller,
+                  isFullscreen: _isFullscreen,
+                  onToggleFullscreen: !allowFullscreen
+                      ? null
+                      : () {
+                          if (_isFullscreen) {
+                            Navigator.of(context, rootNavigator: true).pop();
+                          } else {
+                            _enterFullscreen(context);
+                          }
+                        },
+                ),
             ],
           ),
         );
@@ -72,7 +148,7 @@ class SecureVideoPlayer extends StatelessWidget {
   }
 
   Widget _platformView(int playerId) {
-    const viewType = 'secure_video_player/platform_view';
+    const viewType = SvpChannels.platformViewType;
     final params = {'playerId': playerId};
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
