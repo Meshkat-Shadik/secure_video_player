@@ -39,8 +39,14 @@ await controller.initialize(
   ),
 );
 
-// 3. Widget.
-SecureVideoPlayer(controller: controller);   // ships Flutter controls
+// 3. Widget. Ships Flutter controls with a fullscreen button.
+SecureVideoPlayer(
+  controller: controller,
+  // Under an app-wide orientation lock? Set the orientations to restore on
+  // fullscreen exit — otherwise leaving fullscreen unlocks all of them.
+  // Default null = restore all (non-breaking).
+  restoreOrientationsAfterFullscreen: const [DeviceOrientation.portraitUp],
+);
 
 // 4. Everything else.
 controller.setSpeed(1.5);
