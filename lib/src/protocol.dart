@@ -25,6 +25,7 @@ abstract final class SvpEvents {
   static const String keyDuration = 'duration';
   static const String keyWidth = 'width';
   static const String keyHeight = 'height';
+  static const String keyRotationCorrection = 'rotationCorrection';
   static const String keyPosition = 'position';
   static const String keyBuffered = 'buffered';
   static const String keyIsPlaying = 'isPlaying';
