@@ -1,0 +1,130 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="secure_video_player-docs" version="24.0.0">
+  <diagram id="svp-pigeon-bridge" name="Pigeon Bridge Flow">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="h_dart" value="Dart: SecureVideoController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="30" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="h_pigeon" value="Pigeon BasicMessageChannel (control plane)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="370" y="30" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="h_native" value="Native: SecureVideoPlayerPlugin (HostApi)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="690" y="30" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="h_player" value="PlayerInstance + Engine + EventChannel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="30" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_dart" value="" style="line;strokeWidth=1;dashed=1;strokeColor=#6c8ebf;html=1;" vertex="1" parent="1">
+          <mxGeometry x="159" y="70" width="2" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_pigeon" value="" style="line;strokeWidth=1;dashed=1;strokeColor=#d79b00;html=1;" vertex="1" parent="1">
+          <mxGeometry x="479" y="70" width="2" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_native" value="" style="line;strokeWidth=1;dashed=1;strokeColor=#82b366;html=1;" vertex="1" parent="1">
+          <mxGeometry x="799" y="70" width="2" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_player" value="" style="line;strokeWidth=1;dashed=1;strokeColor=#9673a6;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1119" y="70" width="2" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_create" value="1) create round trip" style="text;html=1;align=left;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="90" width="240" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="c1" value="create(CreateRequest) — 12 fields" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="115" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" value="encode (tag 129); send&#10;HostApi.create" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="370" y="115" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="create(): check CipherRegistry,&#10;resolve source, alloc playerId,&#10;make SurfaceProducer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="690" y="110" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="new PlayerInstance: Engine +&#10;CipherDataSource / ResourceLoader;&#10;register events_&lt;id&gt;; prepare()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="105" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="reply CreateResponse&#10;(playerId, textureId)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="370" y="220" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="store ids; subscribe events_&lt;id&gt;;&#10;await ready" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="220" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ec1_c1_c2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c1" target="c2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec2_c2_c3" value="binary message" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c2" target="c3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec3_c3_c4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c3" target="c4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec4_c4_c5" value="return" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="c4" target="c5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec5_c5_c6" value="reply (tag 130)" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="c5" target="c6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_event" value="2) event delivery (NOT Pigeon — raw EventChannel, Map payload, buffered)" style="text;html=1;align=left;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="300" width="700" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="STATE_READY / status.readyToPlay&#10;-&gt; QueuingEventSink.success(&#10;initialized{duration,width,height})" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="325" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="_onEvent(Map): state=ready,&#10;complete initialize()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="330" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ee_e1_e2" value="EventChannel secure_video_player/events_&lt;id&gt;" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#9673a6;" edge="1" parent="1" source="e1" target="e2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_play" value="3) play round trip" style="text;html=1;align=left;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="425" width="240" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" value="play()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="450" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="send HostApi.play [playerId]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="370" y="450" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="play(): instance(id).play()&#10;(runs on platform main thread)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="690" y="445" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" value="ExoPlayer.play() / AVPlayer.rate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="450" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ep_p1_p2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="p1" target="p2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ep_p2_p3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="p2" target="p3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ep_p3_p4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="p3" target="p4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ep_p3_p2" value="reply void" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="p3" target="p2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_err" value="4) error propagation (control-plane failure)" style="text;html=1;align=left;fontStyle=1;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="50" y="540" width="500" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="err1" value="throw FlutterError / PigeonError&#10;(code, message, details)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="690" y="565" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="err2" value="wrapError -&gt; [code, message, details]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="370" y="565" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="err3" value="PlatformException -&gt;&#10;SecureVideoException&#10;(SecureVideoErrorCode.fromWire)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="50" y="560" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ee_err1_err2" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#b85450;" edge="1" parent="1" source="err1" target="err2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee_err2_err3" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#b85450;" edge="1" parent="1" source="err2" target="err3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note_async" value="Async playback errors (after create) take the EventChannel path instead: error event -&gt; _onEvent -&gt; SecureVideoException" style="text;html=1;align=left;fontColor=#9673a6;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="50" y="640" width="880" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

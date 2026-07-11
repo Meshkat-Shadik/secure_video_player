@@ -1,0 +1,130 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="architecture-docs" version="24.0.0">
+  <diagram id="dart-api-layer" name="Dart API Layer">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="SecureVideoController — state machine and call flow into pigeon" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sm_group" value="SecureVideoState machine (driven by native events)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="1120" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="s_uninit" value="uninitialized" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="140" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s_buffering" value="buffering" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="330" y="140" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s_ready" value="ready" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="580" y="140" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s_completed" value="completed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="830" y="140" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s_error" value="error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="580" y="240" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e_init_buf" value="initialize(): create() ok, state=buffering" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="s_uninit" target="s_buffering">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_buf_ready" value="event: initialized / ready" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="s_buffering" target="s_ready">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ready_buf" value="event: buffering" style="endArrow=block;html=1;fontSize=10;exitX=0.5;exitY=0;entryX=0.5;entryY=0;curved=1;" edge="1" parent="1" source="s_ready" target="s_buffering">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ready_comp" value="event: completed (isPlaying=false)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="s_ready" target="s_completed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_buf_err" value="event: error" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="s_buffering" target="s_error">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ready_err" value="event: error / stream error" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="s_ready" target="s_error">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="cf_group" value="Command call flow and event ingestion" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="1120" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="app" value="App code&#10;controller.initialize / play / pause / seekTo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="80" y="410" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="controller" value="SecureVideoController&#10;(ValueNotifier of SecureVideoValue)&#10;controller.dart:118" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="540" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="callwrap" value="_call(fn): guard disposed + playerId,&#10;map PlatformException to SecureVideoException&#10;controller.dart:320" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="440" y="540" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="hostapi" value="SecureVideoHostApi (pigeon)&#10;create / play / pause / seekTo / dispose&#10;messages.g.dart:543" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="840" y="540" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="channel" value="BasicMessageChannel of Object (per method)&#10;dev.flutter.pigeon...SecureVideoHostApi.method&#10;_PigeonCodec / messages.g.dart:556" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="840" y="690" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="native" value="Native host&#10;ExoPlayer (Android) / AVPlayer (iOS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="840" y="830" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="createreq" value="CreateRequest (flattened options)&#10;source, scheme, renderMode, buffer...&#10;controller.dart:152" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="440" y="410" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="eventchan" value="EventChannel secure_video_player/events_id&#10;broadcast stream&#10;controller.dart:194" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="440" y="810" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="onevent" value="_onEvent(map): decode by SvpEvents.key&#10;initialized/position/videoSize/completed/error&#10;controller.dart:201" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="80" y="810" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="value" value="value = value.copyWith(...)&#10;notifies ValueNotifier listeners (widgets)&#10;controller.dart:188 / 205" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="690" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="readyc" value="_readyCompleter&#10;initialize() awaits until initialized/error&#10;controller.dart:198" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="440" y="690" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_ctrl" value="method call" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="app" target="controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ctrl_call" value="play/pause/seekTo via _call" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="controller" target="callwrap">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_call_host" value="_api.method(playerId, ...)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="callwrap" target="hostapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_host_chan" value="send(List of args)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="hostapi" target="channel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_chan_native" value="platform message" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="channel" target="native">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ctrl_create" value="initialize builds request" style="endArrow=block;html=1;fontSize=10;exitX=0.5;exitY=0;entryX=0;entryY=0.5;" edge="1" parent="1" source="controller" target="createreq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_create_host" value="_api.create(request)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="createreq" target="hostapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_native_event" value="emits event maps" style="endArrow=block;html=1;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="native" target="eventchan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_event_onevent" value="listen(_onEvent, onError)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="eventchan" target="onevent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_onevent_value" value="mutate snapshot" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="onevent" target="value">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_value_ctrl" value="notifyListeners" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="value" target="controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_onevent_ready" value="initialized completes / error completeError" style="endArrow=block;html=1;fontSize=10;dashed=1;" edge="1" parent="1" source="onevent" target="readyc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ready_app" value="unblocks initialize() await" style="endArrow=block;html=1;fontSize=10;dashed=1;exitX=0.5;exitY=0;entryX=1;entryY=0.5;" edge="1" parent="1" source="readyc" target="controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dispose_note" value="Mid-create dispose (issue #1): if _disposed becomes true while create() is in flight,&#10;initialize() calls _api.dispose(response.playerId) and throws disposed.&#10;controller.dart:173" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="540" width="360" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="err_note" value="Error taxonomy: SecureVideoErrorCode.fromWire maps the native code string&#10;(invalidKey, fileNotFound, corruptStream, adapterNotRegistered, drmError,&#10;platformNotSupported, disposed) or falls back to unknown.&#10;errors.dart:13" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="700" width="360" height="120" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

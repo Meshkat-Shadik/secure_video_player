@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="secure_video_player-docs" version="24.0.0">
+  <diagram id="svp-perf-roadmap" name="Performance Roadmap">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="860" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Performance roadmap — impact vs effort (grounded in file:line; gains are estimates)" style="text;html=1;align=left;fontStyle=1;fontSize=14;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="120" y="30" width="1000" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="q_tl" value="HIGH IMPACT / LOW EFFORT — DO FIRST (P0)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="120" y="100" width="530" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="q_tr" value="HIGH IMPACT / HIGH EFFORT — INSANE TIER (P2)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;verticalAlign=top;fontStyle=1;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="650" y="100" width="530" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="q_bl" value="LOW IMPACT / LOW EFFORT — POLISH" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontStyle=1;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="120" y="430" width="530" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="q_br" value="LOW IMPACT / HIGH EFFORT — AVOID" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;fontStyle=1;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="650" y="430" width="530" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="axis_impact" value="IMPACT (high at top)" style="text;html=1;align=center;fontStyle=1;horizontal=0;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="60" y="330" width="40" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="axis_effort" value="EFFORT (high at right)" style="text;html=1;align=center;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="450" y="770" width="400" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="o1" value="1. Cache AES Cipher — kill per-chunk&#10;getInstance()+init()  [CipherAdapter.kt:124]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="140" y="140" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o2" value="2. Zero-copy decrypt into ExoPlayer&#10;target buffer  [CipherDataSource.kt:89]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="140" y="215" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o3" value="3. Tune chunk size / back-buffer&#10;[CipherDataSource.kt:47, PlayerInstance.kt:116]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="140" y="290" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o7" value="7. Coalesce / debounce seekTo&#10;[controller.dart:266]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="390" y="140" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o5" value="5. Prewarm / pool players (grid, list)&#10;[PlayerInstance.kt:108] (P1, medium)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="390" y="215" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o6" value="6. getMediaInfo on Pigeon TaskQueue&#10;[SecureVideoPlayerPlugin.kt:234] (P1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="390" y="290" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o4" value="4. Read-ahead decrypt pipelining&#10;[CipherDataSource.read] (P1/P2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="670" y="140" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o8" value="8. Hardware crypto AES-NI / ARMv8 CE&#10;via JNI  [CipherAdapter.kt:92]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="670" y="215" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o11" value="11. Codec-aware adaptive buffering&#10;(iOS shim)  [player_options.dart:33]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="670" y="290" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o9" value="9. Zero-copy GPU texture (Metal shared)&#10;[PlayerInstance.swift:119]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="920" y="140" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o10" value="10. io_uring / vectored async IO&#10;[CipherDataSource.kt:89]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="920" y="215" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o12" value="12. Adaptive position ticker&#10;(pause when idle)  [PlayerInstance.kt:95]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="140" y="470" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="note_solid" value="Already correct by design: pixel plane never crosses the bridge (only textureId); decrypt runs off the UI thread on both platforms." style="text;html=1;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="670" y="470" width="490" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

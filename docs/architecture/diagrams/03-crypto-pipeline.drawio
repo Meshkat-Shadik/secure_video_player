@@ -1,0 +1,129 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="svp-docs" version="24.0.0">
+  <diagram id="crypto-pipeline" name="Crypto Pipeline">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="lane_common" value="Dart / shared wire protocol" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="40" width="2120" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_android" value="Android read path (pull model — Media3 / ExoPlayer)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="320" width="2120" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_ios" value="iOS read path (request model — AVFoundation)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;verticalAlign=top;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="740" width="2120" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_encrypt" value="Encryption at rest (whole-file transform)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="1160" width="2120" height="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="disk" value="Encrypted file on disk&#10;(ciphertext = plaintext XOR keystream;&#10;len == plaintext len, no header/tag)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="80" y="1230" width="200" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="scheme" value="CryptoScheme (sealed)&#10;AesCtrScheme{key 16/32B, nonce 8B}&#10;crypto_scheme.dart:83-97" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="80" y="120" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="serialize" value="type + params&#10;('aesCtr', {key, nonce})&#10;crypto_scheme.dart:36-39,92-97" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="380" y="120" width="230" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="createreq" value="Pigeon CreateRequest&#10;schemeType, schemeParams,&#10;sourceType, source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="670" y="120" width="230" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="registry" value="CipherRegistry.create(name, params)&#10;name -&gt; CipherAdapter factory&#10;CipherAdapter.kt:28-51 / CipherAdapter.swift:32-62" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="960" y="120" width="330" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="wireproto" value="SvpProtocol constants (hand-mirrored)&#10;scheme/source type strings&#10;protocol.dart / SvpProtocol.kt / SvpProtocol.swift" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1360" y="120" width="360" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a_player" value="PlayerInstance.buildMediaSource()&#10;PlayerInstance.kt:138-159" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="80" y="380" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="a_factory" value="CipherDataSource.Factory&#10;forFile / forContentUri&#10;CipherDataSource.kt:119-151" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="390" y="375" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="a_source" value="ProgressiveMediaSource + ExoPlayer&#10;(pulls bytes) file:// or content:// URI&#10;PlayerInstance.kt:154-157" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="700" y="375" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="a_open" value="CipherDataSource.open(dataSpec)&#10;seek channel to dataSpec.position&#10;CipherDataSource.kt:58-77" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1050" y="375" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="a_read" value="CipherDataSource.read(target,off,len)&#10;read 64KB direct buffer -&gt; target&#10;CipherDataSource.kt:79-99" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1050" y="500" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="a_transform" value="AesCtrAdapter.transform(buf,off,len,filePosition)&#10;firstBlock=pos/16; KS=AES-ECB(nonce||i); XOR&#10;CipherAdapter.kt:106-132" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1400" y="490" width="360" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="a_decoder" value="MediaCodec video decoder&#10;-&gt; Surface / Flutter texture" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1820" y="375" width="270" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="i_player" value="PlayerInstance init (schemeType != none)&#10;PlayerInstance.swift:78-86" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="80" y="800" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="i_url" value="makeURL() svp-encrypted://local/&lt;path&gt;&#10;custom scheme forces delegate routing&#10;CipherResourceLoaderDelegate.swift:84-90" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="410" y="795" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="i_asset" value="AVURLAsset + setDelegate + AVPlayer&#10;PlayerInstance.swift:80-89" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="770" y="795" width="270" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="i_wait" value="resourceLoader shouldWaitForLoading...&#10;returns true; dispatch to serial queue&#10;CipherResourceLoaderDelegate.swift:22-28" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1100" y="795" width="320" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="i_handle" value="handle(loadingRequest)&#10;contentLength=plaintextSize; byteRangeAccess=true&#10;loop 512KB: seek FileHandle, read range&#10;CipherResourceLoaderDelegate.swift:30-71" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1100" y="920" width="320" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="i_transform" value="AesCtrAdapter.transform(&amp;data, filePosition)&#10;same nonce||counter ECB keystream; XOR&#10;CipherAdapter.swift:119-170" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1470" y="915" width="360" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="i_respond" value="dataRequest.respond(with: data)&#10;-&gt; AVPlayer decoder -&gt; screen&#10;CipherResourceLoaderDelegate.swift:66" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1830" y="795" width="270" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_api" value="SecureVideoEncryptor.encrypt/decrypt&#10;-&gt; HostApi.startCrypto&#10;encryptor.dart:49-63" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="360" y="1230" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cryptor" value="FileCryptor (bg thread, 1MB chunks)&#10;adapter.transform per chunk&#10;FileCryptor.kt:14-84 / FileCryptor.swift:5-86" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="720" y="1230" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e_progress" value="EventChannel crypto_events&#10;{operationId, bytesProcessed, total, done, error}&#10;protocol.dart:38-45" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="1120" y="1230" width="340" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="scheme" target="serialize" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="serialize" target="createreq" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="createreq" target="registry" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" value="type strings" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1;" parent="1" source="registry" target="wireproto" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="e5" value="Android" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="createreq" target="a_player" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" value="iOS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="createreq" target="i_player" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="a_player" target="a_factory" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="a_factory" target="a_source" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e9" value="prepare" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="a_source" target="a_open" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e10" value="pull / seek" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="a_open" target="a_read" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e11" value="decrypt in place (filePosition)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="a_read" target="a_transform" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e12" value="plaintext bytes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="a_transform" target="a_decoder" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e13" value="factory" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1;" parent="1" source="registry" target="a_factory" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="i_player" target="i_url" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="i_url" target="i_asset" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e16" value="every read routed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="i_asset" target="i_wait" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e17" value="async" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="i_wait" target="i_handle" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e18" value="decrypt in place (filePosition)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="i_handle" target="i_transform" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e19" value="plaintext bytes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="i_transform" target="i_respond" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e20" value="adapter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;dashed=1;" parent="1" source="registry" target="i_player" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="e21" value="read ranges" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;startArrow=none;" parent="1" source="disk" target="a_read" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e22" value="read ranges" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;startArrow=none;" parent="1" source="disk" target="i_handle" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="e_api" target="e_cryptor" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e24" value="writes ciphertext" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="e_cryptor" target="disk" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e25" value="progress / error" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" parent="1" source="e_cryptor" target="e_progress" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

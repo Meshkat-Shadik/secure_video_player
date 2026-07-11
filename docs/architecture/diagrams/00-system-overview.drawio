@@ -1,0 +1,151 @@
+<mxfile host="65bd71144e">
+    <diagram id="svp-system-overview" name="System Overview">
+        <mxGraphModel dx="634" dy="456" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="n_app" value="Flutter App (example/)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="40" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_controller" value="SecureVideoController&#xa;(lib/src/controller.dart)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="150" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_widget" value="SecureVideoPlayer widget&#xa;(lib/src/widgets/player_view.dart)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="150" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_encryptor" value="SecureVideoEncryptor&#xa;(lib/src/encryptor.dart)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="150" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_pigeon" value="Pigeon control plane&#xa;SecureVideoHostApi (messages.g.dart)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="270" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_events" value="EventChannel plane&#xa;events_&lt;id&gt; + crypto_events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="270" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_aplugin" value="SecureVideoPlayerPlugin (Kotlin)&#xa;implements SecureVideoHostApi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="380" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_exo" value="PlayerInstance + ExoPlayer (Media3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="470" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_cds" value="CipherDataSource&#xa;(Media3 DataSource, 64 KB buffer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="560" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_aadapter" value="CipherAdapter (AesCtrAdapter)&#xa;transform() decrypt in place" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="650" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_codec" value="MediaCodec (hardware decode)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="760" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_surface" value="SurfaceProducer (GPU Surface)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b0e3e6;strokeColor=#0e8088;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="860" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_iplugin" value="SecureVideoPlayerPlugin (Swift)&#xa;implements SecureVideoHostApi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="380" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_avp" value="PlayerInstance + AVPlayer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="470" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_rld" value="CipherResourceLoaderDelegate&#xa;(AVAssetResourceLoader, 512 KB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="560" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_iadapter" value="CipherAdapter (AesCtrAdapter)&#xa;transform() decrypt in place" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="650" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_avf" value="AVFoundation (hardware decode)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="760" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_vout" value="AVPlayerItemVideoOutput&#xa;(CVPixelBuffer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b0e3e6;strokeColor=#0e8088;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="860" width="280" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_disk" value="Encrypted file on disk (ciphertext)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="640" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_texture" value="Flutter Texture / PlatformView&#xa;(player_view.dart)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b0e3e6;strokeColor=#0e8088;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="860" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="n_screen" value="Screen (pixels)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="530" y="970" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_app_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_app" target="n_controller" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_app_widget" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_app" target="n_widget" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_app_enc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_app" target="n_encryptor" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ctrl_pigeon" value="create / play / seekTo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_controller" target="n_pigeon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_enc_pigeon" value="startCrypto" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_encryptor" target="n_pigeon" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_pigeon_aplugin" value="method channels" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_pigeon" target="n_aplugin" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_pigeon_iplugin" value="method channels" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_pigeon" target="n_iplugin" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_aplugin_exo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_aplugin" target="n_exo" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_exo_cds" value="requests bytes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_exo" target="n_cds" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_cds_disk" value="read ciphertext" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" parent="1" source="n_cds" target="n_disk" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_cds_aadapter" value="transform()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_cds" target="n_aadapter" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_aadapter_codec" value="plaintext samples" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_aadapter" target="n_codec" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_codec_surface" value="decoded frame" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_codec" target="n_surface" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_surface_texture" value="GPU texture" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_surface" target="n_texture" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_iplugin_avp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_iplugin" target="n_avp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_avp_rld" value="byte-range request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_avp" target="n_rld" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_rld_disk" value="read ciphertext" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" parent="1" source="n_rld" target="n_disk" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_rld_iadapter" value="transform()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_rld" target="n_iadapter" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_iadapter_avf" value="plaintext samples" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_iadapter" target="n_avf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_avf_vout" value="decoded frame" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_avf" target="n_vout" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_vout_texture" value="CVPixelBuffer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_vout" target="n_texture" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_texture_screen" value="composite" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="n_texture" target="n_screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_exo_events" value="position / state events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#d79b00;" parent="1" source="n_exo" target="n_events" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_avp_events" value="position / state events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#d79b00;" parent="1" source="n_avp" target="n_events" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_events_ctrl" value="events (buffered until subscribe)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#d79b00;" parent="1" source="n_events" target="n_controller" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ctrl_widget" value="ValueNotifier" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" parent="1" source="n_controller" target="n_widget" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

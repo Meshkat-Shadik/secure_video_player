@@ -1,0 +1,139 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="secure_video_player-docs" version="21.0.0" type="device">
+  <diagram id="android-platform" name="Android Platform">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n_flutter" value="Flutter / Dart UI (SecureVideoController)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_hostapi" value="SecureVideoHostApi (Pigeon commands)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_plugin" value="SecureVideoPlayerPlugin&#10;players / eventChannels registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="260" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_instance" value="PlayerInstance (Player.Listener)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_loadcontrol" value="DefaultLoadControl&#10;min/max/bufferForPlayback; setBackBuffer(0,false)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="380" y="380" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_exoplayer" value="ExoPlayer (Media3 1.10.1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="490" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_buildsource" value="buildMediaSource()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="600" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_cipherds" value="CipherDataSource.Factory (doc 03)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="700" y="600" width="280" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_sources" value="ProgressiveMediaSource / DashMediaSource&#10;MergingMediaSource + SingleSampleMediaSource" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="700" y="690" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_drm" value="DefaultDrmSessionManager&#10;FrameworkMediaDrm / LocalMediaDrmCallback (ClearKey)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="690" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_renderer" value="MediaCodecVideoRenderer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="810" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_codec" value="MediaCodec (HW decoder)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="910" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_surface" value="SurfaceProducer.surface (Flutter texture)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="910" width="280" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_composite" value="Flutter texture composite (textureId)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1020" width="280" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_playerview" value="PlayerView (RENDER_PLATFORM_VIEW)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="490" width="280" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_mediasession" value="MediaSession (background / lock-screen)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="380" width="280" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_listener" value="Player.Listener callbacks&#10;onPlaybackStateChanged / onVideoSizeChanged / onPlayerError" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="380" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_ticker" value="position ticker (250 ms Handler)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="500" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_sink" value="QueuingEventSink (main-thread post)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="600" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_eventchannel" value="EventChannel events_&lt;playerId&gt; (Map payloads)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="150" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="n_flutter" target="n_hostapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="n_hostapi" target="n_plugin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="create()" style="endArrow=block;html=1;" edge="1" parent="1" source="n_plugin" target="n_instance">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="configures" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_loadcontrol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="setLoadControl" style="endArrow=block;html=1;" edge="1" parent="1" source="n_loadcontrol" target="n_exoplayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="owns" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_exoplayer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="setMediaSource" style="endArrow=block;html=1;" edge="1" parent="1" source="n_exoplayer" target="n_buildsource">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="DataSource.Factory" style="endArrow=block;html=1;" edge="1" parent="1" source="n_buildsource" target="n_cipherds">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="wraps" style="endArrow=block;html=1;" edge="1" parent="1" source="n_cipherds" target="n_sources">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="ClearKey path" style="endArrow=block;html=1;dashed=1;" edge="1" parent="1" source="n_buildsource" target="n_drm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="SampleStream" style="endArrow=block;html=1;" edge="1" parent="1" source="n_sources" target="n_renderer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="decode" style="endArrow=block;html=1;" edge="1" parent="1" source="n_renderer" target="n_codec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="renders to Surface (zero-copy)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_codec" target="n_surface">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="GPU composite" style="endArrow=block;html=1;" edge="1" parent="1" source="n_surface" target="n_composite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="setVideoSurface" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_surface">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" value="attaches player" style="endArrow=block;html=1;dashed=1;" edge="1" parent="1" source="n_exoplayer" target="n_playerview">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" value="addListener" style="endArrow=block;html=1;" edge="1" parent="1" source="n_exoplayer" target="n_listener">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" value="emit Map events" style="endArrow=block;html=1;" edge="1" parent="1" source="n_listener" target="n_sink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" value="sendPosition" style="endArrow=block;html=1;" edge="1" parent="1" source="n_ticker" target="n_sink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_ticker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" value="setDelegate(sink)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_sink" target="n_eventchannel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" value="events to Dart" style="endArrow=block;html=1;" edge="1" parent="1" source="n_eventchannel" target="n_flutter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" value="setBackgroundPlayback" style="endArrow=block;html=1;dashed=1;" edge="1" parent="1" source="n_instance" target="n_mediasession">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

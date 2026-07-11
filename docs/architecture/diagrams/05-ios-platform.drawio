@@ -1,0 +1,124 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="secure_video_player-docs" version="21.0.0" type="device">
+  <diagram id="ios-platform" name="iOS Platform">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n_flutter" value="Flutter / Dart UI (SecureVideoController)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_hostapi" value="SecureVideoHostApi (Pigeon commands)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_plugin" value="SecureVideoPlayerPlugin&#10;players / eventChannels registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="260" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_instance" value="PlayerInstance (FlutterTexture)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_asset" value="AVURLAsset (custom svp:// URL)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="380" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_loader" value="CipherResourceLoaderDelegate (doc 03)&#10;AVAssetResourceLoader, serial queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="700" y="370" width="300" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_item" value="AVPlayerItem (demux + decode)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="480" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_player" value="AVPlayer (actionAtItemEnd=.none)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="580" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_output" value="AVPlayerItemVideoOutput&#10;32BGRA + IOSurface" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="690" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_displaylink" value="CADisplayLink (hasNewPixelBuffer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="700" y="690" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_copybuffer" value="copyPixelBuffer() → CVPixelBuffer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="690" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_composite" value="Flutter texture composite (textureId)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="800" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_layer" value="AVPlayerLayer (native platform view + PiP)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="380" y="800" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_kvo" value="KVO + Notifications&#10;status / presentationSize / bufferEmpty / likelyToKeepUp / timeControlStatus / DidPlayToEndTime" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="470" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n_ticker" value="position ticker (0.25 s Timer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="600" width="320" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_sink" value="QueuingEventSink (DispatchQueue.main)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="690" width="320" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_eventchannel" value="FlutterEventChannel events_&lt;playerId&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="150" width="320" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="n_audio" value="AVAudioSession .playback (background)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="260" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="n_flutter" target="n_hostapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="n_hostapi" target="n_plugin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="create()" style="endArrow=block;html=1;" edge="1" parent="1" source="n_plugin" target="n_instance">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="builds asset" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="setDelegate (byte-range decrypt)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_asset" target="n_loader">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="AVPlayerItem(asset:)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_asset" target="n_item">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="AVPlayer(playerItem:)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_item" target="n_player">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="item.add(output)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_item" target="n_output">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="hasNewPixelBuffer" style="endArrow=block;html=1;" edge="1" parent="1" source="n_output" target="n_displaylink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="textureFrameAvailable" style="endArrow=block;html=1;" edge="1" parent="1" source="n_displaylink" target="n_copybuffer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="pull frame" style="endArrow=block;html=1;" edge="1" parent="1" source="n_output" target="n_copybuffer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="IOSurface (zero-copy)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_copybuffer" target="n_composite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="playerLayer.player (platform view)" style="endArrow=block;html=1;dashed=1;" edge="1" parent="1" source="n_player" target="n_layer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="observe()" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_kvo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="emit dict events" style="endArrow=block;html=1;" edge="1" parent="1" source="n_kvo" target="n_sink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" style="endArrow=block;html=1;" edge="1" parent="1" source="n_instance" target="n_ticker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" value="sendPosition" style="endArrow=block;html=1;" edge="1" parent="1" source="n_ticker" target="n_sink">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" value="setDelegate(sink)" style="endArrow=block;html=1;" edge="1" parent="1" source="n_sink" target="n_eventchannel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" value="events to Dart" style="endArrow=block;html=1;" edge="1" parent="1" source="n_eventchannel" target="n_flutter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" value="setBackgroundPlayback" style="endArrow=block;html=1;dashed=1;" edge="1" parent="1" source="n_instance" target="n_audio">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,166 @@
+<mxfile host="app.diagrams.net" modified="2026-07-11T00:00:00.000Z" agent="architecture-docs" version="24.0.0">
+  <diagram id="widgets-ui" name="Widgets and UI">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Widget tree and interaction flow: tap to controls to controller to platform" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1000" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="tree_group" value="Widget tree (player_view.dart / controls.dart)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="760" height="1140" as="geometry" />
+        </mxCell>
+        <mxCell id="w_player" value="SecureVideoPlayer (StatefulWidget)&#10;controller, showControls, fit, allowFullscreen,&#10;fullscreenOrientations, restoreOrientationsAfterFullscreen&#10;player_view.dart:47" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="420" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="w_state" value="_SecureVideoPlayerState&#10;owns PlayerUiState _ui + ValueNotifier _controller&#10;player_view.dart:91" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="250" width="420" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="w_surface" value="_PlayerSurface (StatelessWidget)&#10;ValueListenableBuilder of SecureVideoValue&#10;player_view.dart:180" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="380" width="420" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="w_error" value="_ErrorView&#10;state == error&#10;player_view.dart:309" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="80" y="510" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="w_loading" value="black + CircularProgressIndicator&#10;not initialized / playerId null&#10;player_view.dart:209" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="300" y="510" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="w_listenable" value="ListenableBuilder(_ui)&#10;ColoredBox / Stack&#10;player_view.dart:216" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="620" width="420" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="w_texture" value="_texture: FittedBox / RotatedBox / SizedBox / Texture&#10;raw-sized child, rotationCorrection + extraQuarterTurns&#10;player_view.dart:261" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="80" y="730" width="330" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="w_platform" value="_platformView: AndroidView / UiKitView&#10;viewType platform_view, native controls&#10;player_view.dart:287" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="440" y="730" width="330" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="w_bufspin" value="buffering spinner&#10;state == buffering&#10;player_view.dart:232" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="80" y="850" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="w_controls" value="SecureVideoControls (StatefulWidget)&#10;texture mode + showControls + not PiP&#10;controls.dart:12" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="850" width="470" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="w_gesture" value="Material / LayoutBuilder / GestureDetector&#10;tap, doubleTapDown, verticalDrag (fullscreen)&#10;controls.dart:167" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="960" width="470" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="w_overlay" value="_buildOverlay: speed, fit, rotate, PiP, tracks,&#10;play/pause, seek Slider (buffered track), volume, fullscreen&#10;controls.dart:245" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1070" width="470" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="w_hud" value="_buildHud: transient seek/brightness/volume feedback&#10;controls.dart:210" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1080" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e_player_state" value="createState" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_player" target="w_state">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_state_surface" value="build (inline) / fullscreen route" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_state" target="w_surface">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_surface_error" value="error" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_surface" target="w_error">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_surface_loading" value="not init" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_surface" target="w_loading">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_surface_listenable" value="ready" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_surface" target="w_listenable">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_listen_texture" value="renderMode texture" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_listenable" target="w_texture">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_listen_platform" value="renderMode platformView" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_listenable" target="w_platform">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_listen_bufspin" value="if buffering" style="endArrow=block;html=1;fontSize=10;dashed=1;" edge="1" parent="1" source="w_listenable" target="w_bufspin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_listen_controls" value="stacked over video (texture only)" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_listenable" target="w_controls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_controls_gesture" value="build" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_controls" target="w_gesture">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_gesture_overlay" value="ValueListenableBuilder of value" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="w_gesture" target="w_overlay">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_gesture_hud" value="if _hudIcon" style="endArrow=block;html=1;fontSize=10;dashed=1;" edge="1" parent="1" source="w_gesture" target="w_hud">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flow_group" value="Interaction flow" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="820" height="1140" as="geometry" />
+        </mxCell>
+        <mxCell id="f_tap" value="User gesture on GestureDetector&#10;controls.dart:177" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="880" y="130" width="320" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="f_single" value="onTap: _toggleVisible + _scheduleHide&#10;controls.dart:87" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="880" y="240" width="320" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="f_double" value="onDoubleTapDown: thirds -> seek back / toggle / seek fwd&#10;controls.dart:113" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="240" width="360" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="f_drag" value="onVerticalDrag (fullscreen): left half brightness,&#10;right half volume&#10;controls.dart:134" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="360" width="360" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="f_buttons" value="Overlay buttons: play/pause, Slider onChangeEnd,&#10;speed, mute, tracks, PiP&#10;controls.dart:245" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="880" y="360" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="f_controller" value="SecureVideoController&#10;play / pause / seekTo / setVolume / setSpeed / selectTrack&#10;enterPictureInPicture (controller.dart:118)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="880" y="490" width="420" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="f_pigeon" value="SecureVideoHostApi (pigeon) -> native player&#10;messages.g.dart:543" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="880" y="620" width="420" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="f_value" value="native event -> _onEvent -> value.copyWith&#10;ValueNotifier notifies (controller.dart:201)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="880" y="730" width="420" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="f_rebuild" value="ValueListenableBuilder rebuilds overlay + surface&#10;player_view.dart:203 / controls.dart:195" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="880" y="840" width="420" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="f_screen" value="Global window controls: setScreenBrightness /&#10;getScreenBrightness (controller.dart:376)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="490" width="360" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="f_fullscreen" value="onToggleFullscreen -> _enterFullscreen:&#10;setPreferredOrientations, push route, on pop restore&#10;restoreOrientationsAfterFullscreen (player_view.dart:113)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="620" width="360" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tap_single" value="tap" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_tap" target="f_single">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tap_double" value="double tap" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_tap" target="f_double">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tap_drag" value="vertical drag" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_tap" target="f_drag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tap_buttons" value="button press" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_tap" target="f_buttons">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_double_ctrl" value="seekTo" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_double" target="f_controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_buttons_ctrl" value="command" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_buttons" target="f_controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_drag_screen" value="brightness" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_drag" target="f_screen">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_drag_ctrl" value="volume via setVolume" style="endArrow=block;html=1;fontSize=10;dashed=1;" edge="1" parent="1" source="f_drag" target="f_controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ctrl_pigeon" value="_call -> _api" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_controller" target="f_pigeon">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pigeon_value" value="native emits event" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_pigeon" target="f_value">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_value_rebuild" value="notifyListeners" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="f_value" target="f_rebuild">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rebuild_tap" value="new frame of controls / video" style="endArrow=block;html=1;fontSize=10;dashed=1;exitX=1;exitY=0.5;entryX=1;entryY=1;" edge="1" parent="1" source="f_rebuild" target="f_tap">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_fs_screen" value="fullscreen button uses SystemChrome" style="endArrow=none;html=1;fontSize=10;dashed=1;" edge="1" parent="1" source="f_buttons" target="f_fullscreen">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
