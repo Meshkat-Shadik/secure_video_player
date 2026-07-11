@@ -61,18 +61,28 @@ class DartProxyCipherAdapter(
             )
         }
 
-        // Frame: [dir: 0=decrypt, 1=encrypt][offset 8B BE][payload]. Direct buffer required by send().
+        // Frame: [dir: 0=decrypt, 1=encrypt][offset 8B BE][payload]. Direct buffer
+        // required by send(). Do NOT flip(): the Android messenger dispatches
+        // bytes [0, position), so flipping to position 0 sends an empty message.
         val request = ByteBuffer.allocateDirect(9 + length).order(ByteOrder.BIG_ENDIAN)
         request.put(if (encrypt) 1 else 0)
         request.putLong(filePosition)
         request.put(buffer, offset, length)
-        request.flip()
 
         val latch = CountDownLatch(1)
-        val reply = arrayOfNulls<ByteBuffer>(1)
+        // -2 = no/null reply, otherwise the reply's byte count. The reply buffer
+        // is only guaranteed valid inside the callback, so copy there; writing
+        // into the caller's array is safe because the caller is parked on the
+        // latch until countDown() (happens-before via await).
+        val repliedBytes = intArrayOf(-2)
         mainHandler.post {
             channel.send(request) { response ->
-                reply[0] = response
+                if (response != null) {
+                    repliedBytes[0] = response.remaining()
+                    if (response.remaining() == length) {
+                        response.get(buffer, offset, length)
+                    }
+                }
                 latch.countDown()
             }
         }
@@ -80,13 +90,12 @@ class DartProxyCipherAdapter(
         if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
             throw IOException("Dart cipher timed out after ${timeoutMs}ms")
         }
-        val response = reply[0]
-            ?: throw IOException("Dart cipher delegate returned an error or no data")
-        if (response.remaining() != length) {
-            throw IOException(
-                "Dart cipher returned ${response.remaining()} bytes, expected $length",
+        when (repliedBytes[0]) {
+            length -> return
+            -2 -> throw IOException("Dart cipher delegate returned an error or no data")
+            else -> throw IOException(
+                "Dart cipher returned ${repliedBytes[0]} bytes, expected $length",
             )
         }
-        response.get(buffer, offset, length)
     }
 }
