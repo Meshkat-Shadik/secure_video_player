@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'crypto_scheme.dart';
 import 'errors.dart';
 import 'messages.g.dart';
+import 'progress_triggers.dart';
 import 'protocol.dart';
 import 'player_options.dart';
 
@@ -50,6 +51,7 @@ class SecureVideoValue {
     this.buffered = Duration.zero,
     this.duration = Duration.zero,
     this.size = Size.zero,
+    this.rotationCorrection = 0,
     this.isPlaying = false,
     this.speed = 1.0,
     this.volume = 1.0,
@@ -62,7 +64,14 @@ class SecureVideoValue {
   final Duration position;
   final Duration buffered;
   final Duration duration;
+
+  /// Display size — rotation already applied (portrait video → portrait size).
   final Size size;
+
+  /// Degrees (0/90/180/270) the raw texture must be rotated by to appear
+  /// upright. Non-zero when the platform surface can't apply the video
+  /// track's rotation metadata itself; [SecureVideoPlayer] handles it.
+  final int rotationCorrection;
   final bool isPlaying;
   final double speed;
   final double volume;
@@ -81,6 +90,7 @@ class SecureVideoValue {
     Duration? buffered,
     Duration? duration,
     Size? size,
+    int? rotationCorrection,
     bool? isPlaying,
     double? speed,
     double? volume,
@@ -94,6 +104,7 @@ class SecureVideoValue {
         buffered: buffered ?? this.buffered,
         duration: duration ?? this.duration,
         size: size ?? this.size,
+        rotationCorrection: rotationCorrection ?? this.rotationCorrection,
         isPlaying: isPlaying ?? this.isPlaying,
         speed: speed ?? this.speed,
         volume: volume ?? this.volume,
@@ -108,7 +119,9 @@ class SecureVideoValue {
 class SecureVideoController extends ValueNotifier<SecureVideoValue> {
   SecureVideoController({@visibleForTesting SecureVideoHostApi? api})
       : _api = api ?? SecureVideoHostApi(),
-        super(const SecureVideoValue());
+        super(const SecureVideoValue()) {
+    addListener(_updateWakelock);
+  }
 
   final SecureVideoHostApi _api;
 
@@ -119,6 +132,21 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
   Completer<void>? _readyCompleter;
   Future<CreateResponse>? _pendingCreate;
   bool _disposed = false;
+
+  final ProgressTriggerScheduler _triggers = ProgressTriggerScheduler();
+
+  Timer? _sleepTimer;
+  DateTime? _sleepDeadline;
+
+  /// Number of live controllers currently asking to keep the screen awake.
+  /// The native flag flips on the 0→1 acquire and off on the 1→0 release, so
+  /// two players never fight over it (last-off wins).
+  static int _wakeRefCount = 0;
+  bool _wakeHeld = false;
+  bool _keepAwakeOption = false;
+
+  /// null = automatic (follow [_keepAwakeOption] + isPlaying); non-null pins it.
+  bool? _wakeOverride;
 
   int? get playerId => _playerId;
   int? get textureId => _textureId;
@@ -135,7 +163,11 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
       throw StateError('Controller already initialized');
     }
     _renderMode = options.renderMode;
+    _keepAwakeOption = options.keepScreenAwakeWhilePlaying;
     _readyCompleter = Completer<void>();
+    // Anchor the trigger cursor at the resume position so triggers before it
+    // don't fire on the first position event.
+    _triggers.onSeek(options.startPosition.inMilliseconds);
 
     final CreateResponse response;
     try {
@@ -186,17 +218,29 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
         .listen(_onEvent, onError: _onEventError);
 
     await _readyCompleter!.future;
+
+    // Apply create-time platform config now the native player is live.
+    if (options.allowBackgroundPlayback) {
+      await setBackgroundPlayback(true);
+    }
+    if (options.mediaControls.enabled) {
+      await updateMediaControls(options.mediaControls);
+    }
   }
 
   void _onEvent(dynamic event) {
     final m = (event as Map).cast<String, Object?>();
     switch (m[SvpEvents.key]) {
       case SvpEvents.initialized:
+        final durationMs = (m[SvpEvents.keyDuration] as num).toInt();
+        _triggers.setDuration(durationMs);
         value = value.copyWith(
           state: SecureVideoState.ready,
-          duration: Duration(milliseconds: (m[SvpEvents.keyDuration] as num).toInt()),
+          duration: Duration(milliseconds: durationMs),
           size: Size((m[SvpEvents.keyWidth] as num?)?.toDouble() ?? 0,
               (m[SvpEvents.keyHeight] as num?)?.toDouble() ?? 0),
+          rotationCorrection:
+              (m[SvpEvents.keyRotationCorrection] as num?)?.toInt() ?? 0,
         );
         if (!(_readyCompleter?.isCompleted ?? true)) {
           _readyCompleter!.complete();
@@ -208,8 +252,10 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
           value = value.copyWith(state: SecureVideoState.ready);
         }
       case SvpEvents.position:
+        final positionMs = (m[SvpEvents.keyPosition] as num).toInt();
+        _triggers.onPosition(positionMs);
         value = value.copyWith(
-          position: Duration(milliseconds: (m[SvpEvents.keyPosition] as num).toInt()),
+          position: Duration(milliseconds: positionMs),
           buffered:
               Duration(milliseconds: (m[SvpEvents.keyBuffered] as num?)?.toInt() ?? 0),
         );
@@ -218,7 +264,9 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
       case SvpEvents.videoSize:
         value = value.copyWith(
             size: Size((m[SvpEvents.keyWidth] as num).toDouble(),
-                (m[SvpEvents.keyHeight] as num).toDouble()));
+                (m[SvpEvents.keyHeight] as num).toDouble()),
+            rotationCorrection:
+                (m[SvpEvents.keyRotationCorrection] as num?)?.toInt() ?? 0);
       case SvpEvents.completed:
         value = value.copyWith(
             state: SecureVideoState.completed, isPlaying: false);
@@ -249,8 +297,12 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
 
   Future<void> pause() => _call((id) => _api.pause(id));
 
-  Future<void> seekTo(Duration position) =>
-      _call((id) => _api.seekTo(id, position.inMilliseconds));
+  Future<void> seekTo(Duration position) {
+    // Reposition the trigger cursor first so a seek is a jump, not a
+    // playthrough (no intermediate triggers fire).
+    _triggers.onSeek(position.inMilliseconds);
+    return _call((id) => _api.seekTo(id, position.inMilliseconds));
+  }
 
   Future<void> setSpeed(double speed) async {
     await _call((id) => _api.setSpeed(id, speed));
@@ -303,6 +355,84 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
   Future<void> setBackgroundPlayback(bool enabled) =>
       _call((id) => _api.setBackgroundPlayback(id, enabled));
 
+  /// Shows/updates (or tears down, when [MediaControlsOptions.enabled] is
+  /// false) the system media controls for this player.
+  Future<void> updateMediaControls(MediaControlsOptions controls) =>
+      _call((id) => _api.configureMediaControls(
+            id,
+            MediaControlsConfig(
+              enabled: controls.enabled,
+              title: controls.title,
+              artist: controls.artist,
+              artworkPath: controls.artworkPath,
+            ),
+          ));
+
+  /// Registers a callback that fires when playback crosses [t]'s point.
+  /// Returns a handle to cancel it. See [ProgressTrigger].
+  TriggerHandle addProgressTrigger(ProgressTrigger t) {
+    _checkDisposed();
+    return _triggers.add(t);
+  }
+
+  /// Pauses playback after [d]. [onFired] runs after the pause. Replaces any
+  /// existing sleep timer. Canceled automatically on dispose.
+  void setSleepTimer(Duration d, {VoidCallback? onFired}) {
+    _checkDisposed();
+    cancelSleepTimer();
+    _sleepDeadline = DateTime.now().add(d);
+    _sleepTimer = Timer(d, () {
+      _sleepTimer = null;
+      _sleepDeadline = null;
+      if (_disposed) return;
+      pause().catchError((Object _) {});
+      onFired?.call();
+    });
+  }
+
+  /// Cancels a pending sleep timer, if any.
+  void cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepDeadline = null;
+  }
+
+  /// Time left on the sleep timer, or null when none is set.
+  Duration? get sleepTimerRemaining {
+    final deadline = _sleepDeadline;
+    if (deadline == null) return null;
+    final remaining = deadline.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  /// Manual override for the keep-screen-awake behavior: `true` forces the
+  /// screen awake, `false` forces it to sleep, `null` returns to automatic
+  /// (awake while playing when the option is enabled).
+  void setKeepScreenAwake(bool? enabled) {
+    _checkDisposed();
+    _wakeOverride = enabled;
+    _updateWakelock();
+  }
+
+  bool get _wantWake =>
+      _wakeOverride ?? (_keepAwakeOption && value.isPlaying);
+
+  void _updateWakelock() {
+    if (_disposed) return;
+    final want = _wantWake;
+    if (want == _wakeHeld) return;
+    _wakeHeld = want;
+    if (want) {
+      if (++_wakeRefCount == 1) _pushWakelock(true);
+    } else {
+      if (--_wakeRefCount == 0) _pushWakelock(false);
+    }
+  }
+
+  void _pushWakelock(bool enabled) {
+    _api.setKeepScreenAwake(enabled).catchError((Object _) {});
+  }
+
   Future<T> _call<T>(Future<T> Function(int playerId) fn) async {
     _checkDisposed();
     final id = _playerId;
@@ -328,6 +458,14 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    removeListener(_updateWakelock);
+    // Release the wakelock ref this controller was holding, if any.
+    if (_wakeHeld) {
+      _wakeHeld = false;
+      if (--_wakeRefCount == 0) _pushWakelock(false);
+    }
+    cancelSleepTimer();
+    _triggers.dispose();
     // Unblock anyone still awaiting initialize().
     if (!(_readyCompleter?.isCompleted ?? true)) {
       _readyCompleter!.future.ignore();
@@ -354,3 +492,27 @@ class SecureVideoController extends ValueNotifier<SecureVideoValue> {
 /// effort). Global, not per-player — it protects the whole window.
 Future<void> setScreenCaptureProtection(bool enabled) =>
     SecureVideoHostApi().setSecureFlag(enabled);
+
+/// Window brightness 0.0–1.0. Pass -1 to restore the system default
+/// (Android window override cleared; on iOS capture the old value with
+/// [getScreenBrightness] first and set it back). Used by the fullscreen
+/// left-edge swipe gesture; also callable directly.
+Future<void> setScreenBrightness(double brightness) =>
+    SecureVideoHostApi().setScreenBrightness(brightness);
+
+/// Current window brightness 0.0–1.0; -1 means "following system default".
+Future<double> getScreenBrightness() =>
+    SecureVideoHostApi().getScreenBrightness();
+
+/// Container + per-stream metadata for a (possibly encrypted) media file —
+/// codec, profile, resolution, frame rate, bitrate, sample rate, channels,
+/// language. Decrypts through the same native CipherAdapter as playback.
+Future<MediaInfo> getMediaInfo(String path,
+    {CryptoScheme scheme = const CryptoScheme.none()}) async {
+  try {
+    return await SecureVideoHostApi()
+        .getMediaInfo(path, scheme.type, scheme.params);
+  } on PlatformException catch (e) {
+    throw SecureVideoException.fromPlatform(e);
+  }
+}

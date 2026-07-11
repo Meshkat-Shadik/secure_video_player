@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.media3.common.util.UnstableApi
@@ -29,6 +30,16 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
     private val eventChannels = mutableMapOf<Long, EventChannel>()
     private var nextPlayerId = 1L
     private val cryptoEvents = QueuingEventSink()
+
+    // The dartProxy factory this instance registered into the process-global
+    // CipherRegistry. It captures THIS engine's BinaryMessenger, so it must be
+    // unregistered on detach. dartProxy binds to the most recently attached
+    // engine — multi-engine setups are unsupported today (see README).
+    private var dartProxyFactory: (() -> CipherAdapter)? = null
+
+    private companion object {
+        const val TAG = "SecureVideoPlayer"
+    }
 
     private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityStopped(a: Activity) {
@@ -65,6 +76,13 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         context = flutterPluginBinding.applicationContext
         SecureVideoHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
 
+        // Built-in adapter that proxies chunks to a pure-Dart DartCipherDelegate.
+        // Registered here because it needs the engine's BinaryMessenger.
+        val messenger = flutterPluginBinding.binaryMessenger
+        val factory: () -> CipherAdapter = { DartProxyCipherAdapter(messenger) }
+        dartProxyFactory = factory
+        CipherRegistry.register(SvpProtocol.SCHEME_DART_PROXY, factory)
+
         EventChannel(flutterPluginBinding.binaryMessenger, SvpProtocol.CHANNEL_CRYPTO_EVENTS)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(args: Any?, sink: EventChannel.EventSink) {
@@ -82,6 +100,10 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         SecureVideoHostApi.setUp(binding.binaryMessenger, null)
+        // Only removes it if this engine's factory is still the current one, so
+        // a later-attached engine's dartProxy registration is left intact.
+        dartProxyFactory?.let { CipherRegistry.unregister(SvpProtocol.SCHEME_DART_PROXY, it) }
+        dartProxyFactory = null
         players.values.toList().forEach { it.dispose() }
         players.clear()
         eventChannels.values.forEach { it.setStreamHandler(null) }
@@ -92,6 +114,10 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
 
     override fun onAttachedToActivity(activityBinding: ActivityPluginBinding) {
         activity = activityBinding.activity
+        // Clear a stale FLAG_KEEP_SCREEN_ON: a Dart hot restart resets the
+        // wakelock refcount but the native window flag survives. Done here
+        // (not onAttachedToEngine) because that seam has no activity/window.
+        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         activity?.application?.registerActivityLifecycleCallbacks(lifecycleCallbacks)
     }
 
@@ -119,7 +145,10 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
             SvpProtocol.SOURCE_ASSET -> copyAssetToCache(request.source)
             else -> request.source
         }
-        if (request.sourceType != SvpProtocol.SOURCE_URL && !File(resolved).exists()) {
+        // URL and content:// sources aren't filesystem paths.
+        val isPath = request.sourceType != SvpProtocol.SOURCE_URL &&
+            request.sourceType != SvpProtocol.SOURCE_CONTENT_URI
+        if (isPath && !File(resolved).exists()) {
             throw FlutterError(SvpProtocol.ERROR_FILE_NOT_FOUND, "File not found: $resolved")
         }
 
@@ -216,6 +245,23 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
     override fun setBackgroundPlayback(playerId: Long, enabled: Boolean) =
         instance(playerId).setBackgroundPlayback(enabled)
 
+    override fun configureMediaControls(playerId: Long, config: MediaControlsConfig) =
+        instance(playerId).configureMediaControls(config)
+
+    override fun setKeepScreenAwake(enabled: Boolean) {
+        val act = activity
+        if (act == null) {
+            Log.w(TAG, "setKeepScreenAwake($enabled) ignored: no activity attached")
+            return
+        }
+        // Pigeon calls arrive on the main thread; runOnUiThread keeps the window
+        // flag mutation on it regardless.
+        act.runOnUiThread {
+            val flag = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            if (enabled) act.window.addFlags(flag) else act.window.clearFlags(flag)
+        }
+    }
+
     override fun setSecureFlag(enabled: Boolean) {
         val window = activity?.window ?: return
         if (enabled) {
@@ -226,6 +272,41 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
+    }
+
+    override fun getMediaInfo(
+        path: String,
+        schemeType: String,
+        schemeParams: Map<String?, Any?>,
+    ): MediaInfo {
+        if (schemeType == SvpProtocol.SCHEME_DART_PROXY) {
+            throw FlutterError(SvpProtocol.ERROR_PLATFORM_NOT_SUPPORTED,
+                "getMediaInfo is not supported with the dartProxy scheme; " +
+                    "probe before encrypting or use a native scheme")
+        }
+        if (!CipherRegistry.isRegistered(schemeType)) {
+            throw FlutterError(SvpProtocol.ERROR_ADAPTER_NOT_REGISTERED,
+                "No CipherAdapter registered for '$schemeType'")
+        }
+        // TODO(review): move probe off the platform thread (Pigeon TaskQueue) to avoid ANR on slow storage
+        return MediaInfoProbe.probe(
+            path, schemeType,
+            schemeParams.entries.associate { (k, v) -> (k ?: "") to v },
+        )
+    }
+
+    override fun setScreenBrightness(brightness: Double) {
+        val window = activity?.window ?: return
+        val attrs = window.attributes
+        attrs.screenBrightness =
+            if (brightness < 0) WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            else brightness.toFloat().coerceIn(0f, 1f)
+        window.attributes = attrs
+    }
+
+    override fun getScreenBrightness(): Double {
+        val brightness = activity?.window?.attributes?.screenBrightness ?: -1f
+        return brightness.toDouble()
     }
 
     override fun startCrypto(
@@ -247,7 +328,7 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         } catch (e: IllegalArgumentException) {
             throw FlutterError(SvpProtocol.ERROR_ADAPTER_NOT_REGISTERED, e.message ?: schemeType)
         }
-        return FileCryptor.start(inputPath, outputPath, adapter) { p ->
+        return FileCryptor.start(inputPath, outputPath, adapter, encrypt) { p ->
             cryptoEvents.success(mapOf(
                 SvpProtocol.KEY_OPERATION_ID to p.operationId,
                 SvpProtocol.KEY_BYTES_PROCESSED to p.bytesProcessed,

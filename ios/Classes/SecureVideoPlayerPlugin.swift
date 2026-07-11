@@ -1,6 +1,7 @@
 import AVFoundation
 import AVKit
 import Flutter
+import MediaPlayer
 import UIKit
 
 public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostApi {
@@ -18,6 +19,13 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
         SecureVideoHostApiSetup.setUp(
             binaryMessenger: registrar.messenger(), api: instance)
 
+        // Built-in adapter that proxies chunks to a pure-Dart DartCipherDelegate.
+        // Registered here because it needs the engine's BinaryMessenger.
+        let messenger = registrar.messenger()
+        CipherRegistry.shared.register(SvpProtocol.schemeDartProxy) {
+            DartProxyCipherAdapter(messenger: messenger)
+        }
+
         let cryptoChannel = FlutterEventChannel(
             name: SvpProtocol.channelCryptoEvents,
             binaryMessenger: registrar.messenger())
@@ -28,6 +36,12 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
             withId: SvpProtocol.platformViewType)
 
         instance.observeAppLifecycle()
+
+        // isIdleTimerDisabled survives a Dart hot restart; reset it so a stale
+        // wakelock from a previous run doesn't linger.
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
     }
 
     func playerInstance(_ id: Int64) -> PlayerInstance? { players[id] }
@@ -128,6 +142,13 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
     }
 
     func dispose(playerId: Int64) throws {
+        // configureMediaControls enables on the main queue; route the disable
+        // through the same queue so a configure-then-dispose runs in call order
+        // and never disables before the enable lands. The owner-guard in
+        // disable() prevents a stale disable from clobbering a newer owner.
+        DispatchQueue.main.async {
+            NowPlayingCenter.shared.disable(playerId: playerId)
+        }
         players.removeValue(forKey: playerId)?.dispose()
         eventChannels.removeValue(forKey: playerId)?.setStreamHandler(nil)
     }
@@ -188,6 +209,23 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
         }
     }
 
+    func setKeepScreenAwake(enabled: Bool) throws {
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = enabled
+        }
+    }
+
+    func configureMediaControls(playerId: Int64, config: MediaControlsConfig) throws {
+        let p = try instance(playerId)
+        DispatchQueue.main.async {
+            if config.enabled {
+                NowPlayingCenter.shared.enable(player: p, playerId: playerId, config: config)
+            } else {
+                NowPlayingCenter.shared.disable(playerId: playerId)
+            }
+        }
+    }
+
     func setSecureFlag(enabled: Bool) throws {
         // iOS has no FLAG_SECURE. Best effort: a secure UITextField layer
         // blanks the window in screenshots/recordings (well-known technique).
@@ -213,6 +251,29 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
         }
     }
 
+    func getMediaInfo(
+        path: String, schemeType: String, schemeParams: [String?: Any?]
+    ) throws -> MediaInfo {
+        let params = schemeParams.reduce(into: [String: Any?]()) {
+            if let k = $1.key { $0[k] = $1.value }
+        }
+        return try MediaInfoProbe.probe(path: path, schemeType: schemeType, params: params)
+    }
+
+    func setScreenBrightness(brightness: Double) throws {
+        DispatchQueue.main.async {
+            // -1 = "system default"; iOS has no override concept, so callers
+            // should capture getScreenBrightness() first and restore it.
+            if brightness >= 0 {
+                UIScreen.main.brightness = CGFloat(min(max(brightness, 0), 1))
+            }
+        }
+    }
+
+    func getScreenBrightness() throws -> Double {
+        Double(UIScreen.main.brightness)
+    }
+
     func startCrypto(
         inputPath: String, outputPath: String, schemeType: String,
         schemeParams: [String?: Any?], encrypt: Bool
@@ -228,7 +289,7 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
                               message: error.localizedDescription, details: nil)
         }
         return FileCryptor.shared.start(
-            inputPath: inputPath, outputPath: outputPath, adapter: adapter
+            inputPath: inputPath, outputPath: outputPath, adapter: adapter, encrypt: encrypt
         ) { [cryptoEvents] progress in
             cryptoEvents.success(progress.asMap)
         }
@@ -297,4 +358,111 @@ final class PlayerPlatformView: NSObject, FlutterPlatformView {
 final class PlayerContainerView: UIView {
     override class var layerClass: AnyClass { AVPlayerLayer.self }
     var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+}
+
+/// Owns the single system Now Playing surface (MPNowPlayingInfoCenter) and the
+/// remote command targets (MPRemoteCommandCenter). Only one player can own it
+/// at a time — the last player to enable wins. Main-thread only.
+///
+/// Background audio + lock-screen controls also need the host app to declare
+/// `UIBackgroundModes: [audio]` in Info.plist and an active `.playback` audio
+/// session (see `setBackgroundPlayback`); this class does not fake that.
+final class NowPlayingCenter {
+    static let shared = NowPlayingCenter()
+
+    private weak var owner: PlayerInstance?
+    private var ownerId: Int64 = -1
+    private var config: MediaControlsConfig?
+    private var artwork: MPMediaItemArtwork?
+    private var commandsRegistered = false
+    // Exact targets we added, so removeCommands() doesn't wipe host-app targets.
+    private var commandTargets: [(command: MPRemoteCommand, target: Any)] = []
+
+    func enable(player: PlayerInstance, playerId: Int64, config: MediaControlsConfig) {
+        // Hand ownership over from any previous owner.
+        if let previous = owner, previous !== player {
+            previous.onPlaybackStateChanged = nil
+        }
+        owner = player
+        ownerId = playerId
+        self.config = config
+        loadArtwork(config.artworkPath)
+        registerCommands()
+        player.onPlaybackStateChanged = { [weak self, weak player] in
+            guard let self, let player, player === self.owner else { return }
+            self.refresh()
+        }
+        refresh()
+    }
+
+    func disable(playerId: Int64) {
+        guard ownerId == playerId else { return }  // not the current owner
+        owner?.onPlaybackStateChanged = nil
+        owner = nil
+        ownerId = -1
+        config = nil
+        artwork = nil
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        removeCommands()
+    }
+
+    private func refresh() {
+        guard let owner, let config else { return }
+        var info: [String: Any] = [:]
+        if let title = config.title { info[MPMediaItemPropertyTitle] = title }
+        if let artist = config.artist { info[MPMediaItemPropertyArtist] = artist }
+        if let artwork { info[MPMediaItemPropertyArtwork] = artwork }
+        let duration = owner.player.currentItem?.duration ?? .zero
+        if duration.isNumeric {
+            info[MPMediaItemPropertyPlaybackDuration] = CMTimeGetSeconds(duration)
+        }
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] =
+            max(0, CMTimeGetSeconds(owner.player.currentTime()))
+        info[MPNowPlayingInfoPropertyPlaybackRate] = owner.player.rate
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    private func loadArtwork(_ path: String?) {
+        artwork = nil
+        guard let path, let image = UIImage(contentsOfFile: path) else { return }
+        artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+    }
+
+    private func registerCommands() {
+        guard !commandsRegistered else { return }
+        commandsRegistered = true
+        let center = MPRemoteCommandCenter.shared()
+        // Targets route to whoever currently owns Now Playing.
+        let play = center.playCommand.addTarget { [weak self] _ in
+            guard let owner = self?.owner else { return .noSuchContent }
+            owner.play(); self?.refresh(); return .success
+        }
+        let pause = center.pauseCommand.addTarget { [weak self] _ in
+            guard let owner = self?.owner else { return .noSuchContent }
+            owner.pause(); self?.refresh(); return .success
+        }
+        let seek = center.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let owner = self?.owner,
+                  let event = event as? MPChangePlaybackPositionCommandEvent
+            else { return .noSuchContent }
+            owner.seekTo(ms: Int64(event.positionTime * 1000))
+            self?.refresh()
+            return .success
+        }
+        commandTargets = [
+            (center.playCommand, play),
+            (center.pauseCommand, pause),
+            (center.changePlaybackPositionCommand, seek),
+        ]
+    }
+
+    private func removeCommands() {
+        guard commandsRegistered else { return }
+        commandsRegistered = false
+        // Remove exactly our targets so host-app targets on these commands survive.
+        for (command, target) in commandTargets {
+            command.removeTarget(target)
+        }
+        commandTargets.removeAll()
+    }
 }
