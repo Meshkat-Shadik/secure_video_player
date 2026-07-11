@@ -74,6 +74,75 @@ class TrackInfo {
   int? bitrate;
 }
 
+/// One elementary stream inside a media container.
+class MediaStreamInfo {
+  MediaStreamInfo({
+    required this.type,
+    this.codec,
+    this.profile,
+    this.width,
+    this.height,
+    this.frameRate,
+    this.bitrate,
+    this.sampleRate,
+    this.channels,
+    this.language,
+  });
+
+  /// 'video' | 'audio' | 'subtitle' | 'unknown'
+  String type;
+  String? codec;
+  String? profile;
+  int? width;
+  int? height;
+  double? frameRate;
+  int? bitrate;
+  int? sampleRate;
+  int? channels;
+  String? language;
+}
+
+/// Container-level metadata + per-stream details (MX-Player-style info).
+class MediaInfo {
+  MediaInfo({
+    required this.durationMs,
+    this.container,
+    this.rotation,
+    this.bitrate,
+    required this.streams,
+  });
+
+  int durationMs;
+
+  /// e.g. 'video/mp4' (Android MIME) or 'mp4' (iOS best effort).
+  String? container;
+
+  /// Display rotation in degrees (0/90/180/270) from the video track.
+  int? rotation;
+
+  /// Overall bitrate when the container reports one.
+  int? bitrate;
+  List<MediaStreamInfo?> streams;
+}
+
+/// System media-controls surface (Android media notification via
+/// MediaSessionService, iOS Now Playing + remote commands).
+class MediaControlsConfig {
+  MediaControlsConfig({
+    required this.enabled,
+    this.title,
+    this.artist,
+    this.artworkPath,
+  });
+
+  bool enabled;
+  String? title;
+  String? artist;
+
+  /// Local file path to artwork image, optional.
+  String? artworkPath;
+}
+
 @HostApi()
 abstract class SecureVideoHostApi {
   CreateResponse create(CreateRequest request);
@@ -96,6 +165,28 @@ abstract class SecureVideoHostApi {
 
   /// Window-level capture protection (FLAG_SECURE / iOS best effort).
   void setSecureFlag(bool enabled);
+
+  /// Keeps the screen on while true (FLAG_KEEP_SCREEN_ON / isIdleTimerDisabled).
+  /// Global window/app level — callers ref-count on the Dart side.
+  void setKeepScreenAwake(bool enabled);
+
+  /// Shows/updates (enabled=true) or tears down (enabled=false) system media
+  /// controls for the player: Android media notification, iOS Now Playing.
+  void configureMediaControls(int playerId, MediaControlsConfig config);
+
+  /// Probes a (possibly encrypted) media file: container, duration, and
+  /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
+  /// Decryption happens through the same CipherAdapter as playback.
+  MediaInfo getMediaInfo(
+      String path, String schemeType, Map<String?, Object?> schemeParams);
+
+  /// Window screen brightness 0.0–1.0; pass -1 to restore system default.
+  /// Android: WindowManager.LayoutParams.screenBrightness.
+  /// iOS: UIScreen.main.brightness (persists — callers should restore).
+  void setScreenBrightness(double brightness);
+
+  /// Current window brightness 0.0–1.0 (-1 = following system default).
+  double getScreenBrightness();
 
   /// Starts encrypt (encrypt=true) or decrypt file transform.
   /// Returns operationId; progress on EventChannel 'secure_video_player/crypto_events'.

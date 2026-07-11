@@ -383,6 +383,199 @@ data class TrackInfo (
     return "TrackInfo(id=$id, type=$type, selected=$selected, label=$label, language=$language, width=$width, height=$height, bitrate=$bitrate)"
   }
 }
+
+/**
+ * One elementary stream inside a media container.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class MediaStreamInfo (
+  /** 'video' | 'audio' | 'subtitle' | 'unknown' */
+  val type: String,
+  val codec: String? = null,
+  val profile: String? = null,
+  val width: Long? = null,
+  val height: Long? = null,
+  val frameRate: Double? = null,
+  val bitrate: Long? = null,
+  val sampleRate: Long? = null,
+  val channels: Long? = null,
+  val language: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): MediaStreamInfo {
+      val type = pigeonVar_list[0] as String
+      val codec = pigeonVar_list[1] as String?
+      val profile = pigeonVar_list[2] as String?
+      val width = pigeonVar_list[3] as Long?
+      val height = pigeonVar_list[4] as Long?
+      val frameRate = pigeonVar_list[5] as Double?
+      val bitrate = pigeonVar_list[6] as Long?
+      val sampleRate = pigeonVar_list[7] as Long?
+      val channels = pigeonVar_list[8] as Long?
+      val language = pigeonVar_list[9] as String?
+      return MediaStreamInfo(type, codec, profile, width, height, frameRate, bitrate, sampleRate, channels, language)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      type,
+      codec,
+      profile,
+      width,
+      height,
+      frameRate,
+      bitrate,
+      sampleRate,
+      channels,
+      language,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as MediaStreamInfo
+    return MessagesPigeonUtils.deepEquals(this.type, other.type) && MessagesPigeonUtils.deepEquals(this.codec, other.codec) && MessagesPigeonUtils.deepEquals(this.profile, other.profile) && MessagesPigeonUtils.deepEquals(this.width, other.width) && MessagesPigeonUtils.deepEquals(this.height, other.height) && MessagesPigeonUtils.deepEquals(this.frameRate, other.frameRate) && MessagesPigeonUtils.deepEquals(this.bitrate, other.bitrate) && MessagesPigeonUtils.deepEquals(this.sampleRate, other.sampleRate) && MessagesPigeonUtils.deepEquals(this.channels, other.channels) && MessagesPigeonUtils.deepEquals(this.language, other.language)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.type)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.codec)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.profile)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.width)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.height)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.frameRate)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.bitrate)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.sampleRate)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.channels)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.language)
+    return result
+  }
+  override fun toString(): String {
+    return "MediaStreamInfo(type=$type, codec=$codec, profile=$profile, width=$width, height=$height, frameRate=$frameRate, bitrate=$bitrate, sampleRate=$sampleRate, channels=$channels, language=$language)"
+  }
+}
+
+/**
+ * Container-level metadata + per-stream details (MX-Player-style info).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class MediaInfo (
+  val durationMs: Long,
+  /** e.g. 'video/mp4' (Android MIME) or 'mp4' (iOS best effort). */
+  val container: String? = null,
+  /** Display rotation in degrees (0/90/180/270) from the video track. */
+  val rotation: Long? = null,
+  /** Overall bitrate when the container reports one. */
+  val bitrate: Long? = null,
+  val streams: List<MediaStreamInfo?>
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): MediaInfo {
+      val durationMs = pigeonVar_list[0] as Long
+      val container = pigeonVar_list[1] as String?
+      val rotation = pigeonVar_list[2] as Long?
+      val bitrate = pigeonVar_list[3] as Long?
+      val streams = pigeonVar_list[4] as List<MediaStreamInfo?>
+      return MediaInfo(durationMs, container, rotation, bitrate, streams)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      durationMs,
+      container,
+      rotation,
+      bitrate,
+      streams,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as MediaInfo
+    return MessagesPigeonUtils.deepEquals(this.durationMs, other.durationMs) && MessagesPigeonUtils.deepEquals(this.container, other.container) && MessagesPigeonUtils.deepEquals(this.rotation, other.rotation) && MessagesPigeonUtils.deepEquals(this.bitrate, other.bitrate) && MessagesPigeonUtils.deepEquals(this.streams, other.streams)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.durationMs)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.container)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.rotation)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.bitrate)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.streams)
+    return result
+  }
+  override fun toString(): String {
+    return "MediaInfo(durationMs=$durationMs, container=$container, rotation=$rotation, bitrate=$bitrate, streams=$streams)"
+  }
+}
+
+/**
+ * System media-controls surface (Android media notification via
+ * MediaSessionService, iOS Now Playing + remote commands).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class MediaControlsConfig (
+  val enabled: Boolean,
+  val title: String? = null,
+  val artist: String? = null,
+  /** Local file path to artwork image, optional. */
+  val artworkPath: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): MediaControlsConfig {
+      val enabled = pigeonVar_list[0] as Boolean
+      val title = pigeonVar_list[1] as String?
+      val artist = pigeonVar_list[2] as String?
+      val artworkPath = pigeonVar_list[3] as String?
+      return MediaControlsConfig(enabled, title, artist, artworkPath)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      enabled,
+      title,
+      artist,
+      artworkPath,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as MediaControlsConfig
+    return MessagesPigeonUtils.deepEquals(this.enabled, other.enabled) && MessagesPigeonUtils.deepEquals(this.title, other.title) && MessagesPigeonUtils.deepEquals(this.artist, other.artist) && MessagesPigeonUtils.deepEquals(this.artworkPath, other.artworkPath)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.enabled)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.title)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.artist)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.artworkPath)
+    return result
+  }
+  override fun toString(): String {
+    return "MediaControlsConfig(enabled=$enabled, title=$title, artist=$artist, artworkPath=$artworkPath)"
+  }
+}
 private open class MessagesPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -401,6 +594,21 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
           TrackInfo.fromList(it)
         }
       }
+      132.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MediaStreamInfo.fromList(it)
+        }
+      }
+      133.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MediaInfo.fromList(it)
+        }
+      }
+      134.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          MediaControlsConfig.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -416,6 +624,18 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
       }
       is TrackInfo -> {
         stream.write(131)
+        writeValue(stream, value.toList())
+      }
+      is MediaStreamInfo -> {
+        stream.write(132)
+        writeValue(stream, value.toList())
+      }
+      is MediaInfo -> {
+        stream.write(133)
+        writeValue(stream, value.toList())
+      }
+      is MediaControlsConfig -> {
+        stream.write(134)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -442,6 +662,30 @@ interface SecureVideoHostApi {
   fun setBackgroundPlayback(playerId: Long, enabled: Boolean)
   /** Window-level capture protection (FLAG_SECURE / iOS best effort). */
   fun setSecureFlag(enabled: Boolean)
+  /**
+   * Keeps the screen on while true (FLAG_KEEP_SCREEN_ON / isIdleTimerDisabled).
+   * Global window/app level — callers ref-count on the Dart side.
+   */
+  fun setKeepScreenAwake(enabled: Boolean)
+  /**
+   * Shows/updates (enabled=true) or tears down (enabled=false) system media
+   * controls for the player: Android media notification, iOS Now Playing.
+   */
+  fun configureMediaControls(playerId: Long, config: MediaControlsConfig)
+  /**
+   * Probes a (possibly encrypted) media file: container, duration, and
+   * per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
+   * Decryption happens through the same CipherAdapter as playback.
+   */
+  fun getMediaInfo(path: String, schemeType: String, schemeParams: Map<String?, Any?>): MediaInfo
+  /**
+   * Window screen brightness 0.0–1.0; pass -1 to restore system default.
+   * Android: WindowManager.LayoutParams.screenBrightness.
+   * iOS: UIScreen.main.brightness (persists — callers should restore).
+   */
+  fun setScreenBrightness(brightness: Double)
+  /** Current window brightness 0.0–1.0 (-1 = following system default). */
+  fun getScreenBrightness(): Double
   /**
    * Starts encrypt (encrypt=true) or decrypt file transform.
    * Returns operationId; progress on EventChannel 'secure_video_player/crypto_events'.
@@ -726,6 +970,95 @@ interface SecureVideoHostApi {
             val wrapped: List<Any?> = try {
               api.setSecureFlag(enabledArg)
               listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.setKeepScreenAwake$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val enabledArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setKeepScreenAwake(enabledArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.configureMediaControls$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val playerIdArg = args[0] as Long
+            val configArg = args[1] as MediaControlsConfig
+            val wrapped: List<Any?> = try {
+              api.configureMediaControls(playerIdArg, configArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            val schemeTypeArg = args[1] as String
+            val schemeParamsArg = args[2] as Map<String?, Any?>
+            val wrapped: List<Any?> = try {
+              listOf(api.getMediaInfo(pathArg, schemeTypeArg, schemeParamsArg))
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.setScreenBrightness$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val brightnessArg = args[0] as Double
+            val wrapped: List<Any?> = try {
+              api.setScreenBrightness(brightnessArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getScreenBrightness$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getScreenBrightness())
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)
             }

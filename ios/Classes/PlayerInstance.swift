@@ -50,9 +50,26 @@ final class PlayerInstance: NSObject, FlutterTexture {
     private var initializedSent = false
     private var positionTimer: Timer?
     private var latestPixelBuffer: CVPixelBuffer?
+    // When true the display link runs only long enough to render one frame
+    // (initial frame or a seek-while-paused result) and then re-pauses itself.
+    private var awaitingPausedSeekFrame = false
+    // Deadline after which the link re-pauses even if no new frame arrived (a
+    // paused seek that yields no new pixel buffer would otherwise tick forever).
+    private var awaitingFrameDeadline: CFTimeInterval = 0
 
-    /// Set by the platform view when it hosts this player's AVPlayerLayer.
+    /// Set by the platform view when it hosts this player's AVPlayerLayer, or
+    /// built lazily for texture-mode PiP (see `makeTexturePipController`).
     var pipController: AVPictureInPictureController?
+    // Texture-mode PiP: a ~1pt invisible AVPlayerLayer hosted on the key window
+    // (AVPictureInPictureController needs a real playerLayer, which texture mode
+    // otherwise has none of). Nil in platform-view mode.
+    private var pipHostView: UIView?
+    private var pipPlayerLayer: AVPlayerLayer?
+    private var pipReadyObs: NSKeyValueObservation?
+
+    /// Invoked on play/pause/seek so the plugin can refresh the Now Playing info
+    /// when this player owns the system media controls.
+    var onPlaybackStateChanged: (() -> Void)?
 
     init(
         playerId: Int64,
@@ -93,7 +110,11 @@ final class PlayerInstance: NSObject, FlutterTexture {
 
         if request.renderMode == SvpProtocol.renderTexture {
             let attrs: [String: Any] = [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+                // NV12 (biplanar YUV) is what the hardware decoder emits and what
+                // Flutter's iOS texture path prefers, so requesting it avoids a
+                // per-frame YUV->BGRA conversion and a ~2.6x larger buffer.
+                kCVPixelBufferPixelFormatTypeKey as String:
+                    kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
                 kCVPixelBufferIOSurfacePropertiesKey as String: [:],
             ]
             let output = AVPlayerItemVideoOutput(pixelBufferAttributes: attrs)
@@ -132,6 +153,19 @@ final class PlayerInstance: NSObject, FlutterTexture {
         let time = output.itemTime(forHostTime: CACurrentMediaTime())
         if output.hasNewPixelBuffer(forItemTime: time) {
             textureRegistry?.textureFrameAvailable(textureId)
+            // If the link was only running to render a single paused frame
+            // (initial frame or a seek-while-paused result), stop it again now
+            // that the new frame has been delivered.
+            if awaitingPausedSeekFrame, player.timeControlStatus != .playing {
+                awaitingPausedSeekFrame = false
+                link.isPaused = true
+            }
+        } else if awaitingPausedSeekFrame, player.timeControlStatus != .playing,
+                  link.timestamp >= awaitingFrameDeadline {
+            // Paused seek produced no new frame (e.g. seek to an already-current
+            // time); stop the link anyway so it stops firing at 60-120 Hz.
+            awaitingPausedSeekFrame = false
+            link.isPaused = true
         }
     }
 
@@ -171,6 +205,7 @@ final class PlayerInstance: NSObject, FlutterTexture {
                 events.success([
                     SvpProtocol.eventKey: SvpProtocol.eventVideoSize,
                     SvpProtocol.keyWidth: Int(size.width), SvpProtocol.keyHeight: Int(size.height),
+                    SvpProtocol.keyRotationCorrection: rotationCorrection(),
                 ])
             }
         case "playbackBufferEmpty":
@@ -183,12 +218,38 @@ final class PlayerInstance: NSObject, FlutterTexture {
             let playing = player.timeControlStatus == .playing
             events.success([SvpProtocol.eventKey: SvpProtocol.eventIsPlayingChanged, SvpProtocol.keyIsPlaying: playing])
             if playing {
+                awaitingPausedSeekFrame = false
                 startTicker()
                 displayLink?.isPaused = false
+            } else {
+                // Paused / stalled / ended: stop the display link so it no longer
+                // fires at 60-120 Hz. The last frame stays on screen because
+                // copyPixelBuffer returns the cached latestPixelBuffer.
+                displayLink?.isPaused = true
+            }
+            // timeControlStatus KVO may fire off-main; onPlaybackStateChanged
+            // leads to MPNowPlayingInfoCenter, which is main-only.
+            if Thread.isMainThread {
+                onPlaybackStateChanged?()
+            } else {
+                DispatchQueue.main.async { [weak self] in self?.onPlaybackStateChanged?() }
             }
         default:
             break
         }
+    }
+
+    /// Degrees Dart must rotate the raw texture by. `presentationSize` is
+    /// already transform-applied (display size), but AVPlayerItemVideoOutput
+    /// hands back UNrotated pixel buffers — so texture mode needs a RotatedBox
+    /// on the Flutter side. AVPlayerLayer (platformView) rotates itself.
+    private func rotationCorrection() -> Int {
+        guard videoOutput != nil,
+              let track = item.asset.tracks(withMediaType: .video).first else { return 0 }
+        let t = track.preferredTransform
+        let radians = atan2(Double(t.b), Double(t.a))
+        let degrees = Int((radians * 180 / .pi).rounded())
+        return ((degrees % 360) + 360) % 360
     }
 
     private func sendInitializedIfNeeded() {
@@ -202,10 +263,18 @@ final class PlayerInstance: NSObject, FlutterTexture {
             SvpProtocol.keyDuration: max(0, ms),
             SvpProtocol.keyWidth: Int(size.width),
             SvpProtocol.keyHeight: Int(size.height),
+            SvpProtocol.keyRotationCorrection: rotationCorrection(),
         ])
         if videoOutput != nil {
             let link = CADisplayLink(target: self, selector: #selector(onDisplayLink(_:)))
             link.add(to: .main, forMode: .common)
+            // If we are not (yet) playing, let the link render just the first
+            // frame and then re-pause itself, so a paused player doesn't tick
+            // at 60-120 Hz. The timeControlStatus observer unpauses it on play.
+            if player.timeControlStatus != .playing {
+                awaitingPausedSeekFrame = true
+                awaitingFrameDeadline = CACurrentMediaTime() + 0.5
+            }
             displayLink = link
         }
         startTicker()
@@ -228,7 +297,22 @@ final class PlayerInstance: NSObject, FlutterTexture {
         }
     }
 
+    private var lastPipActive = false
+
+    /// Ticker-driven: detects the user closing/expanding the PiP window.
+    private func checkPipState() {
+        let active = pipController?.isPictureInPictureActive ?? false
+        if active != lastPipActive {
+            lastPipActive = active
+            events.success([SvpProtocol.eventKey: SvpProtocol.eventPipChanged, SvpProtocol.keyActive: active])
+            // User closed the PiP window: release the hidden texture-mode layer
+            // (no-op for platform-view mode, which owns its own layer).
+            if !active { teardownTexturePipLayer() }
+        }
+    }
+
     private func sendPosition() {
+        checkPipState()
         let pos = Int64(CMTimeGetSeconds(player.currentTime()) * 1000)
         var buffered: Int64 = 0
         if let range = item.loadedTimeRanges.first?.timeRangeValue {
@@ -255,7 +339,21 @@ final class PlayerInstance: NSObject, FlutterTexture {
 
     func seekTo(ms: Int64) {
         let time = CMTime(value: ms, timescale: 1000)
-        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) {
+            [weak self] _ in
+            // Seeking while paused produces a new frame but no timeControlStatus
+            // change, so the (paused) display link would never deliver it. Run
+            // the link until it renders this one frame, then it re-pauses itself.
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if self.player.timeControlStatus != .playing {
+                    self.awaitingPausedSeekFrame = true
+                    self.awaitingFrameDeadline = CACurrentMediaTime() + 0.5
+                    self.displayLink?.isPaused = false
+                }
+                self.onPlaybackStateChanged?()
+            }
+        }
     }
 
     func setSpeed(_ speed: Double) {
@@ -310,16 +408,78 @@ final class PlayerInstance: NSObject, FlutterTexture {
 
     // ---- pip ----
 
+    /// Starts PiP. Platform-view mode already has a `pipController` wired to its
+    /// AVPlayerLayer; texture mode has no layer, so we build a hidden one on the
+    /// key window lazily on first request.
+    ///
+    /// Requires the host app to declare `UIBackgroundModes: [audio]` in
+    /// Info.plist and an active `.playback` audio session (see
+    /// `setBackgroundPlayback`), otherwise iOS refuses to start/continue PiP.
     func enterPictureInPicture() -> Bool {
-        guard let pip = pipController, pip.isPictureInPicturePossible else { return false }
-        pip.startPictureInPicture()
-        events.success([SvpProtocol.eventKey: SvpProtocol.eventPipChanged, SvpProtocol.keyActive: true])
+        guard AVPictureInPictureController.isPictureInPictureSupported() else { return false }
+        let pip: AVPictureInPictureController
+        if let existing = pipController {
+            pip = existing
+        } else {
+            guard let created = makeTexturePipController() else { return false }
+            pipController = created
+            pip = created
+        }
+        if pip.isPictureInPicturePossible {
+            pip.startPictureInPicture()
+            lastPipActive = true  // suppress the next ticker's duplicate pipChanged(true)
+            events.success([SvpProtocol.eventKey: SvpProtocol.eventPipChanged, SvpProtocol.keyActive: true])
+        } else {
+            // A freshly built controller reports possible=false until its layer
+            // is ready; start as soon as it flips true.
+            startPipWhenPossible(pip)
+        }
         return true
+    }
+
+    private func makeTexturePipController() -> AVPictureInPictureController? {
+        let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow })
+            ?? UIApplication.shared.windows.first
+        guard let window else { return nil }
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        host.isUserInteractionEnabled = false
+        host.alpha = 0.01
+        let layer = AVPlayerLayer(player: player)
+        layer.frame = host.bounds
+        host.layer.addSublayer(layer)
+        window.addSubview(host)
+        window.sendSubviewToBack(host)
+        pipHostView = host
+        pipPlayerLayer = layer
+        return AVPictureInPictureController(playerLayer: layer)
+    }
+
+    private func startPipWhenPossible(_ pip: AVPictureInPictureController) {
+        pipReadyObs = pip.observe(\.isPictureInPicturePossible, options: [.new]) {
+            [weak self] pip, _ in
+            guard pip.isPictureInPicturePossible else { return }
+            self?.pipReadyObs = nil
+            pip.startPictureInPicture()
+            self?.lastPipActive = true  // suppress the next ticker's duplicate pipChanged(true)
+            self?.events.success([SvpProtocol.eventKey: SvpProtocol.eventPipChanged, SvpProtocol.keyActive: true])
+        }
+    }
+
+    private func teardownTexturePipLayer() {
+        guard pipHostView != nil else { return }
+        pipReadyObs = nil
+        pipController = nil
+        pipPlayerLayer?.removeFromSuperlayer()
+        pipPlayerLayer = nil
+        pipHostView?.removeFromSuperview()
+        pipHostView = nil
     }
 
     // ---- teardown ----
 
     func dispose() {
+        onPlaybackStateChanged = nil
+        teardownTexturePipLayer()
         positionTimer?.invalidate()
         positionTimer = nil
         displayLink?.invalidate()

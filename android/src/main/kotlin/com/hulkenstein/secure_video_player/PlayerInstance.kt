@@ -10,6 +10,7 @@ import android.os.Looper
 import android.util.Rational
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -88,14 +89,54 @@ class PlayerInstance(
     var wasPlayingBeforeBackground = false
 
     private var mediaSession: MediaSession? = null
+    private var mediaControlsEnabled = false
+    private var mediaControlsConfig: MediaControlsConfig? = null
     private var initializedSent = false
+    private var lastPipActive = false
     private val subtitles = mutableListOf<MediaItem.SubtitleConfiguration>()
     private val handler = Handler(Looper.getMainLooper())
+    private var tickerRunning = false
     private val positionTicker = object : Runnable {
         override fun run() {
             sendPosition()
+            checkPipState()
             handler.postDelayed(this, 250)
         }
+    }
+
+    // Gate the ticker on playback: a paused/ended player emits no position
+    // events (perf P1). startTicker guards against double-posting.
+    private fun startTicker() {
+        if (tickerRunning) return
+        tickerRunning = true
+        handler.post(positionTicker)
+    }
+
+    private fun stopTicker() {
+        tickerRunning = false
+        handler.removeCallbacks(positionTicker)
+    }
+
+    // Lightweight PiP poll, independent of the position ticker (which stops
+    // while paused). Without it, pausing inside PiP then closing the window
+    // would emit no pipChanged(false). Runs only while PiP is active.
+    private var pipPollRunning = false
+    private val pipPoller = object : Runnable {
+        override fun run() {
+            checkPipState()
+            if (pipPollRunning) handler.postDelayed(this, 500)
+        }
+    }
+
+    private fun startPipPoll() {
+        if (pipPollRunning) return
+        pipPollRunning = true
+        handler.postDelayed(pipPoller, 500)
+    }
+
+    private fun stopPipPoll() {
+        pipPollRunning = false
+        handler.removeCallbacks(pipPoller)
     }
 
     private val videoFilePath: String = request.source
@@ -133,20 +174,45 @@ class PlayerInstance(
 
     // ---- media source ----
 
+    /**
+     * Builds the source MediaItem, baking in the media-controls metadata
+     * (title/artist/artwork) when set so the system notification and lock screen
+     * show it. The item is created here, not via replaceMediaItem, so playback
+     * keeps using the custom CipherDataSource factory.
+     */
+    private fun mediaItemFor(uri: Uri): MediaItem {
+        val c = mediaControlsConfig
+        if (c == null || (c.title == null && c.artist == null && c.artworkPath == null)) {
+            return MediaItem.fromUri(uri)
+        }
+        val metadata = MediaMetadata.Builder().apply {
+            c.title?.let { setTitle(it) }
+            c.artist?.let { setArtist(it) }
+            c.artworkPath?.let { setArtworkUri(Uri.fromFile(java.io.File(it))) }
+        }.build()
+        return MediaItem.Builder().setUri(uri).setMediaMetadata(metadata).build()
+    }
+
     private fun buildMediaSource(): MediaSource {
         if (adapterName == SvpProtocol.SCHEME_CLEAR_KEY) return buildClearKeySource()
 
         if (adapterName == SvpProtocol.SCHEME_NONE && request.sourceType == SvpProtocol.SOURCE_URL) {
             // Plain streaming (HTTP progressive / HLS / DASH via sniffing).
             return DefaultMediaSourceFactory(DefaultDataSource.Factory(context))
-                .createMediaSource(MediaItem.fromUri(request.source))
+                .createMediaSource(mediaItemFor(Uri.parse(request.source)))
         }
 
-        val factory = CipherDataSource.Factory(videoFilePath) {
-            CipherRegistry.create(adapterName, adapterParams)
+        val adapterFactory = { CipherRegistry.create(adapterName, adapterParams) }
+        val isContentUri = request.sourceType == SvpProtocol.SOURCE_CONTENT_URI
+        val factory = if (isContentUri) {
+            CipherDataSource.Factory.forContentUri(context, request.source, adapterFactory)
+        } else {
+            CipherDataSource.Factory.forFile(videoFilePath, adapterFactory)
         }
+        val mediaUri = if (isContentUri) Uri.parse(request.source)
+        else Uri.fromFile(java.io.File(videoFilePath))
         val videoSource = ProgressiveMediaSource.Factory(factory)
-            .createMediaSource(MediaItem.fromUri(Uri.fromFile(java.io.File(videoFilePath))))
+            .createMediaSource(mediaItemFor(mediaUri))
         return mergeWithSubtitles(videoSource)
     }
 
@@ -183,7 +249,7 @@ class PlayerInstance(
         val uri = if (request.sourceType == SvpProtocol.SOURCE_URL) Uri.parse(request.source)
         else Uri.fromFile(java.io.File(request.source))
         val dataFactory = DefaultDataSource.Factory(context)
-        val item = MediaItem.fromUri(uri)
+        val item = mediaItemFor(uri)
         return if (request.source.endsWith(".mpd") ) {
             DashMediaSource.Factory(dataFactory)
                 .setDrmSessionManagerProvider { drmManager }
@@ -197,41 +263,76 @@ class PlayerInstance(
 
     // ---- Player.Listener ----
 
+    /**
+     * Display geometry for the Flutter side: (width, height, rotationCorrection).
+     *
+     * Media3's MediaCodecVideoRenderer already flips width/height for 90/270
+     * rotations before reporting [Player.getVideoSize], so videoSize IS the
+     * display size — never swap it again (doing so was the SVP-rotation bug).
+     *
+     * When the Flutter surface applies the codec's buffer transform
+     * (SurfaceProducer.handlesCropAndRotation) the texture already shows the
+     * frame upright. Otherwise (ImageReader-backed producers, Impeller default)
+     * the texture receives raw unrotated frames and Dart must rotate with a
+     * RotatedBox by the track's rotation metadata — mirroring the official
+     * video_player plugin's TextureExoPlayerEventListener.
+     */
+    private fun displayGeometry(): Triple<Int, Int, Int> {
+        val size = player.videoSize
+        var correction = 0
+        val surfaceHandlesRotation = surfaceProducer?.handlesCropAndRotation() ?: true
+        if (!surfaceHandlesRotation) {
+            val rotation = player.videoFormat?.rotationDegrees ?: 0
+            correction = ((rotation % 360) + 360) % 360
+        }
+        return Triple(size.width, size.height, correction)
+    }
+
+    private fun sizeEventPayload(event: String): Map<String, Any> {
+        val (width, height, correction) = displayGeometry()
+        return mapOf(
+            SvpProtocol.EVENT_KEY to event,
+            SvpProtocol.KEY_WIDTH to width,
+            SvpProtocol.KEY_HEIGHT to height,
+            SvpProtocol.KEY_ROTATION_CORRECTION to correction,
+        )
+    }
+
     override fun onPlaybackStateChanged(state: Int) {
         when (state) {
             Player.STATE_READY -> {
                 if (!initializedSent) {
                     initializedSent = true
-                    val size = player.videoSize
-                    events.success(mapOf(
-                        SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_INITIALIZED,
-                        SvpProtocol.KEY_DURATION to maxOf(0L, player.duration),
-                        SvpProtocol.KEY_WIDTH to size.width,
-                        SvpProtocol.KEY_HEIGHT to size.height,
-                    ))
-                    handler.post(positionTicker)
+                    events.success(sizeEventPayload(SvpProtocol.EVENT_INITIALIZED) +
+                        mapOf(SvpProtocol.KEY_DURATION to maxOf(0L, player.duration)))
+                    // One position snapshot so a paused start (autoPlay=false,
+                    // startPositionMs) shows the right position before the ticker
+                    // runs; the ticker itself starts on onIsPlayingChanged(true).
+                    sendPosition()
                 } else {
                     events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_READY))
                 }
             }
             Player.STATE_BUFFERING -> events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_BUFFERING))
-            Player.STATE_ENDED -> events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_COMPLETED))
+            Player.STATE_ENDED -> {
+                stopTicker()
+                events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_COMPLETED))
+            }
+            Player.STATE_IDLE -> stopTicker()
             else -> {}
         }
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_IS_PLAYING_CHANGED, SvpProtocol.KEY_IS_PLAYING to isPlaying))
+        if (isPlaying) startTicker() else stopTicker()
+        // Final position on pause / immediate position on resume.
         sendPosition()
     }
 
     override fun onVideoSizeChanged(videoSize: VideoSize) {
         if (videoSize.width > 0 && videoSize.height > 0) {
-            events.success(mapOf(
-                SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_VIDEO_SIZE,
-                SvpProtocol.KEY_WIDTH to videoSize.width,
-                SvpProtocol.KEY_HEIGHT to videoSize.height,
-            ))
+            events.success(sizeEventPayload(SvpProtocol.EVENT_VIDEO_SIZE))
         }
     }
 
@@ -267,7 +368,14 @@ class PlayerInstance(
     }
 
     fun pause() = player.pause()
-    fun seekTo(positionMs: Long) = player.seekTo(positionMs)
+
+    fun seekTo(positionMs: Long) {
+        player.seekTo(positionMs)
+        // While playing the ticker reports the new position; while paused it is
+        // stopped, so push one position event or seek-while-paused wouldn't update.
+        if (!player.isPlaying) sendPosition()
+    }
+
     fun setSpeed(speed: Double) = player.setPlaybackSpeed(speed.toFloat())
     fun setVolume(volume: Double) { player.volume = volume.toFloat() }
 
@@ -335,13 +443,20 @@ class PlayerInstance(
                 .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
                 .build()
         )
-        // Rebuild the merged source, preserving position and play state.
+        rebuildSourcePreservingState()
+    }
+
+    /** Rebuilds the media source (subtitles / metadata changes) in place. */
+    private fun rebuildSourcePreservingState() {
+        // TODO(review): preserve track selection overrides across rebuild
         val position = player.currentPosition
-        val wasPlaying = player.isPlaying
+        // Capture the play INTENT (playWhenReady), not isPlaying: called during
+        // BUFFERING, isPlaying is false and would silently un-pause the user.
+        val wasPlayWhenReady = player.playWhenReady
         player.setMediaSource(buildMediaSource())
         player.prepare()
         player.seekTo(position)
-        player.playWhenReady = wasPlaying
+        player.playWhenReady = wasPlayWhenReady
     }
 
     // ---- PiP / background / lifecycle ----
@@ -349,36 +464,89 @@ class PlayerInstance(
     fun enterPictureInPicture(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
         val activity = activityProvider() ?: return false
-        val size = player.videoSize
-        val ratio = if (size.width > 0 && size.height > 0)
-            Rational(size.width, size.height) else Rational(16, 9)
+        // PiP aspect must be the DISPLAY shape (rotation applied) and inside
+        // Android's allowed 1:2.39 range, or enterPictureInPictureMode throws.
+        val (width, height, _) = displayGeometry()
+        var ratio = if (width > 0 && height > 0) Rational(width, height) else Rational(16, 9)
+        if (ratio.toFloat() < 1 / 2.39f) ratio = Rational(100, 239)
+        if (ratio.toFloat() > 2.39f) ratio = Rational(239, 100)
         return try {
-            activity.enterPictureInPictureMode(
+            val entered = activity.enterPictureInPictureMode(
                 PictureInPictureParams.Builder().setAspectRatio(ratio).build())
-            events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_PIP_CHANGED, SvpProtocol.KEY_ACTIVE to true))
-            true
+            if (entered) {
+                lastPipActive = true
+                startPipPoll()
+                events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_PIP_CHANGED, SvpProtocol.KEY_ACTIVE to true))
+            }
+            entered
         } catch (e: IllegalStateException) {
+            // Missing android:supportsPictureInPicture="true" on the activity.
             false
+        }
+    }
+
+    /** Ticker-driven: detects the user closing/expanding the PiP window. */
+    private fun checkPipState() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val active = activityProvider()?.isInPictureInPictureMode ?: false
+        if (active != lastPipActive) {
+            lastPipActive = active
+            events.success(mapOf(SvpProtocol.EVENT_KEY to SvpProtocol.EVENT_PIP_CHANGED, SvpProtocol.KEY_ACTIVE to active))
+            if (active) startPipPoll() else stopPipPoll()
         }
     }
 
     fun setBackgroundPlayback(enabled: Boolean) {
         backgroundPlayback = enabled
-        if (enabled && mediaSession == null) {
-            // ponytail: MediaSession gives lock-screen/media-button controls;
-            // add a MediaSessionService + foreground notification if playback
-            // must survive aggressive process death.
+        if (enabled) ensureMediaSession() else maybeReleaseMediaSession()
+    }
+
+    /**
+     * Enables/disables system media controls (foreground notification + lock
+     * screen). Shares the single [mediaSession] with background playback via
+     * [ensureMediaSession]; the [PlaybackService] posts the notification.
+     * `enabled = false` removes the notification and releases the session iff
+     * background playback no longer needs it.
+     */
+    fun configureMediaControls(config: MediaControlsConfig) {
+        if (config.enabled) {
+            mediaControlsEnabled = true
+            mediaControlsConfig = config
+            // Bake title/artist/artwork into the loaded item so the notification
+            // shows it (only reprepares when there is metadata to apply).
+            if (config.title != null || config.artist != null || config.artworkPath != null) {
+                rebuildSourcePreservingState()
+            }
+            ensureMediaSession()
+            PlaybackService.enable(context, playerId, mediaSession!!)
+        } else {
+            mediaControlsEnabled = false
+            mediaControlsConfig = null
+            PlaybackService.disable(context, playerId)
+            maybeReleaseMediaSession()
+        }
+    }
+
+    /** One MediaSession per player, shared by background playback + controls. */
+    private fun ensureMediaSession() {
+        if (mediaSession == null) {
             mediaSession = MediaSession.Builder(context, player)
                 .setId("secure_video_player_$playerId")
                 .build()
-        } else if (!enabled) {
-            mediaSession?.release()
-            mediaSession = null
         }
+    }
+
+    private fun maybeReleaseMediaSession() {
+        if (backgroundPlayback || mediaControlsEnabled) return
+        mediaSession?.release()
+        mediaSession = null
     }
 
     fun dispose() {
         handler.removeCallbacks(positionTicker)
+        stopPipPoll()
+        // Remove this player's notification and stop the service if it was last.
+        PlaybackService.disable(context, playerId)
         mediaSession?.release()
         mediaSession = null
         player.removeListener(this)

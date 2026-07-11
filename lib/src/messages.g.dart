@@ -332,6 +332,230 @@ class TrackInfo {
   }
 }
 
+/// One elementary stream inside a media container.
+class MediaStreamInfo {
+  MediaStreamInfo({
+    required this.type,
+    this.codec,
+    this.profile,
+    this.width,
+    this.height,
+    this.frameRate,
+    this.bitrate,
+    this.sampleRate,
+    this.channels,
+    this.language,
+  });
+
+  /// 'video' | 'audio' | 'subtitle' | 'unknown'
+  String type;
+
+  String? codec;
+
+  String? profile;
+
+  int? width;
+
+  int? height;
+
+  double? frameRate;
+
+  int? bitrate;
+
+  int? sampleRate;
+
+  int? channels;
+
+  String? language;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      type,
+      codec,
+      profile,
+      width,
+      height,
+      frameRate,
+      bitrate,
+      sampleRate,
+      channels,
+      language,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static MediaStreamInfo decode(Object result) {
+    result as List<Object?>;
+    return MediaStreamInfo(
+      type: result[0]! as String,
+      codec: result[1] as String?,
+      profile: result[2] as String?,
+      width: result[3] as int?,
+      height: result[4] as int?,
+      frameRate: result[5] as double?,
+      bitrate: result[6] as int?,
+      sampleRate: result[7] as int?,
+      channels: result[8] as int?,
+      language: result[9] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! MediaStreamInfo || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(type, other.type) && _deepEquals(codec, other.codec) && _deepEquals(profile, other.profile) && _deepEquals(width, other.width) && _deepEquals(height, other.height) && _deepEquals(frameRate, other.frameRate) && _deepEquals(bitrate, other.bitrate) && _deepEquals(sampleRate, other.sampleRate) && _deepEquals(channels, other.channels) && _deepEquals(language, other.language);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'MediaStreamInfo(type: $type, codec: $codec, profile: $profile, width: $width, height: $height, frameRate: $frameRate, bitrate: $bitrate, sampleRate: $sampleRate, channels: $channels, language: $language)';
+  }
+}
+
+/// Container-level metadata + per-stream details (MX-Player-style info).
+class MediaInfo {
+  MediaInfo({
+    required this.durationMs,
+    this.container,
+    this.rotation,
+    this.bitrate,
+    required this.streams,
+  });
+
+  int durationMs;
+
+  /// e.g. 'video/mp4' (Android MIME) or 'mp4' (iOS best effort).
+  String? container;
+
+  /// Display rotation in degrees (0/90/180/270) from the video track.
+  int? rotation;
+
+  /// Overall bitrate when the container reports one.
+  int? bitrate;
+
+  List<MediaStreamInfo?> streams;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      durationMs,
+      container,
+      rotation,
+      bitrate,
+      streams,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static MediaInfo decode(Object result) {
+    result as List<Object?>;
+    return MediaInfo(
+      durationMs: result[0]! as int,
+      container: result[1] as String?,
+      rotation: result[2] as int?,
+      bitrate: result[3] as int?,
+      streams: (result[4]! as List<Object?>).cast<MediaStreamInfo?>(),
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! MediaInfo || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(durationMs, other.durationMs) && _deepEquals(container, other.container) && _deepEquals(rotation, other.rotation) && _deepEquals(bitrate, other.bitrate) && _deepEquals(streams, other.streams);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'MediaInfo(durationMs: $durationMs, container: $container, rotation: $rotation, bitrate: $bitrate, streams: $streams)';
+  }
+}
+
+/// System media-controls surface (Android media notification via
+/// MediaSessionService, iOS Now Playing + remote commands).
+class MediaControlsConfig {
+  MediaControlsConfig({
+    required this.enabled,
+    this.title,
+    this.artist,
+    this.artworkPath,
+  });
+
+  bool enabled;
+
+  String? title;
+
+  String? artist;
+
+  /// Local file path to artwork image, optional.
+  String? artworkPath;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      enabled,
+      title,
+      artist,
+      artworkPath,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static MediaControlsConfig decode(Object result) {
+    result as List<Object?>;
+    return MediaControlsConfig(
+      enabled: result[0]! as bool,
+      title: result[1] as String?,
+      artist: result[2] as String?,
+      artworkPath: result[3] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! MediaControlsConfig || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(enabled, other.enabled) && _deepEquals(title, other.title) && _deepEquals(artist, other.artist) && _deepEquals(artworkPath, other.artworkPath);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'MediaControlsConfig(enabled: $enabled, title: $title, artist: $artist, artworkPath: $artworkPath)';
+  }
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -349,6 +573,15 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is TrackInfo) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
+    }    else if (value is MediaStreamInfo) {
+      buffer.putUint8(132);
+      writeValue(buffer, value.encode());
+    }    else if (value is MediaInfo) {
+      buffer.putUint8(133);
+      writeValue(buffer, value.encode());
+    }    else if (value is MediaControlsConfig) {
+      buffer.putUint8(134);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -363,6 +596,12 @@ class _PigeonCodec extends StandardMessageCodec {
         return CreateResponse.decode(readValue(buffer)!);
       case 131:
         return TrackInfo.decode(readValue(buffer)!);
+      case 132:
+        return MediaStreamInfo.decode(readValue(buffer)!);
+      case 133:
+        return MediaInfo.decode(readValue(buffer)!);
+      case 134:
+        return MediaControlsConfig.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -656,6 +895,109 @@ class SecureVideoHostApi {
         isNullValid: true,
     )
     ;
+  }
+
+  /// Keeps the screen on while true (FLAG_KEEP_SCREEN_ON / isIdleTimerDisabled).
+  /// Global window/app level — callers ref-count on the Dart side.
+  Future<void> setKeepScreenAwake(bool enabled) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.setKeepScreenAwake$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[enabled]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Shows/updates (enabled=true) or tears down (enabled=false) system media
+  /// controls for the player: Android media notification, iOS Now Playing.
+  Future<void> configureMediaControls(int playerId, MediaControlsConfig config) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.configureMediaControls$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[playerId, config]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Probes a (possibly encrypted) media file: container, duration, and
+  /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
+  /// Decryption happens through the same CipherAdapter as playback.
+  Future<MediaInfo> getMediaInfo(String path, String schemeType, Map<String?, Object?> schemeParams) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[path, schemeType, schemeParams]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as MediaInfo;
+  }
+
+  /// Window screen brightness 0.0–1.0; pass -1 to restore system default.
+  /// Android: WindowManager.LayoutParams.screenBrightness.
+  /// iOS: UIScreen.main.brightness (persists — callers should restore).
+  Future<void> setScreenBrightness(double brightness) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.setScreenBrightness$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[brightness]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Current window brightness 0.0–1.0 (-1 = following system default).
+  Future<double> getScreenBrightness() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getScreenBrightness$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as double;
   }
 
   /// Starts encrypt (encrypt=true) or decrypt file transform.

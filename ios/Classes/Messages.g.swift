@@ -389,6 +389,203 @@ struct TrackInfo: Hashable, CustomStringConvertible {
   }
 }
 
+/// One elementary stream inside a media container.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct MediaStreamInfo: Hashable, CustomStringConvertible {
+  /// 'video' | 'audio' | 'subtitle' | 'unknown'
+  var type: String
+  var codec: String? = nil
+  var profile: String? = nil
+  var width: Int64? = nil
+  var height: Int64? = nil
+  var frameRate: Double? = nil
+  var bitrate: Int64? = nil
+  var sampleRate: Int64? = nil
+  var channels: Int64? = nil
+  var language: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> MediaStreamInfo? {
+    let type = pigeonVar_list[0] as! String
+    let codec: String? = nilOrValue(pigeonVar_list[1])
+    let profile: String? = nilOrValue(pigeonVar_list[2])
+    let width: Int64? = nilOrValue(pigeonVar_list[3])
+    let height: Int64? = nilOrValue(pigeonVar_list[4])
+    let frameRate: Double? = nilOrValue(pigeonVar_list[5])
+    let bitrate: Int64? = nilOrValue(pigeonVar_list[6])
+    let sampleRate: Int64? = nilOrValue(pigeonVar_list[7])
+    let channels: Int64? = nilOrValue(pigeonVar_list[8])
+    let language: String? = nilOrValue(pigeonVar_list[9])
+
+    return MediaStreamInfo(
+      type: type,
+      codec: codec,
+      profile: profile,
+      width: width,
+      height: height,
+      frameRate: frameRate,
+      bitrate: bitrate,
+      sampleRate: sampleRate,
+      channels: channels,
+      language: language
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      type,
+      codec,
+      profile,
+      width,
+      height,
+      frameRate,
+      bitrate,
+      sampleRate,
+      channels,
+      language,
+    ]
+  }
+  static func == (lhs: MediaStreamInfo, rhs: MediaStreamInfo) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.type, rhs.type) && MessagesPigeonInternal.deepEquals(lhs.codec, rhs.codec) && MessagesPigeonInternal.deepEquals(lhs.profile, rhs.profile) && MessagesPigeonInternal.deepEquals(lhs.width, rhs.width) && MessagesPigeonInternal.deepEquals(lhs.height, rhs.height) && MessagesPigeonInternal.deepEquals(lhs.frameRate, rhs.frameRate) && MessagesPigeonInternal.deepEquals(lhs.bitrate, rhs.bitrate) && MessagesPigeonInternal.deepEquals(lhs.sampleRate, rhs.sampleRate) && MessagesPigeonInternal.deepEquals(lhs.channels, rhs.channels) && MessagesPigeonInternal.deepEquals(lhs.language, rhs.language)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("MediaStreamInfo")
+    MessagesPigeonInternal.deepHash(value: type, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: codec, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: profile, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: width, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: height, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: frameRate, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: bitrate, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: sampleRate, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: channels, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: language, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "MediaStreamInfo(type: \(String(describing: type)), codec: \(String(describing: codec)), profile: \(String(describing: profile)), width: \(String(describing: width)), height: \(String(describing: height)), frameRate: \(String(describing: frameRate)), bitrate: \(String(describing: bitrate)), sampleRate: \(String(describing: sampleRate)), channels: \(String(describing: channels)), language: \(String(describing: language)))"
+  }
+}
+
+/// Container-level metadata + per-stream details (MX-Player-style info).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct MediaInfo: Hashable, CustomStringConvertible {
+  var durationMs: Int64
+  /// e.g. 'video/mp4' (Android MIME) or 'mp4' (iOS best effort).
+  var container: String? = nil
+  /// Display rotation in degrees (0/90/180/270) from the video track.
+  var rotation: Int64? = nil
+  /// Overall bitrate when the container reports one.
+  var bitrate: Int64? = nil
+  var streams: [MediaStreamInfo?]
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> MediaInfo? {
+    let durationMs = pigeonVar_list[0] as! Int64
+    let container: String? = nilOrValue(pigeonVar_list[1])
+    let rotation: Int64? = nilOrValue(pigeonVar_list[2])
+    let bitrate: Int64? = nilOrValue(pigeonVar_list[3])
+    let streams = pigeonVar_list[4] as! [MediaStreamInfo?]
+
+    return MediaInfo(
+      durationMs: durationMs,
+      container: container,
+      rotation: rotation,
+      bitrate: bitrate,
+      streams: streams
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      durationMs,
+      container,
+      rotation,
+      bitrate,
+      streams,
+    ]
+  }
+  static func == (lhs: MediaInfo, rhs: MediaInfo) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.durationMs, rhs.durationMs) && MessagesPigeonInternal.deepEquals(lhs.container, rhs.container) && MessagesPigeonInternal.deepEquals(lhs.rotation, rhs.rotation) && MessagesPigeonInternal.deepEquals(lhs.bitrate, rhs.bitrate) && MessagesPigeonInternal.deepEquals(lhs.streams, rhs.streams)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("MediaInfo")
+    MessagesPigeonInternal.deepHash(value: durationMs, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: container, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: rotation, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: bitrate, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: streams, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "MediaInfo(durationMs: \(String(describing: durationMs)), container: \(String(describing: container)), rotation: \(String(describing: rotation)), bitrate: \(String(describing: bitrate)), streams: \(String(describing: streams)))"
+  }
+}
+
+/// System media-controls surface (Android media notification via
+/// MediaSessionService, iOS Now Playing + remote commands).
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct MediaControlsConfig: Hashable, CustomStringConvertible {
+  var enabled: Bool
+  var title: String? = nil
+  var artist: String? = nil
+  /// Local file path to artwork image, optional.
+  var artworkPath: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> MediaControlsConfig? {
+    let enabled = pigeonVar_list[0] as! Bool
+    let title: String? = nilOrValue(pigeonVar_list[1])
+    let artist: String? = nilOrValue(pigeonVar_list[2])
+    let artworkPath: String? = nilOrValue(pigeonVar_list[3])
+
+    return MediaControlsConfig(
+      enabled: enabled,
+      title: title,
+      artist: artist,
+      artworkPath: artworkPath
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      enabled,
+      title,
+      artist,
+      artworkPath,
+    ]
+  }
+  static func == (lhs: MediaControlsConfig, rhs: MediaControlsConfig) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return MessagesPigeonInternal.deepEquals(lhs.enabled, rhs.enabled) && MessagesPigeonInternal.deepEquals(lhs.title, rhs.title) && MessagesPigeonInternal.deepEquals(lhs.artist, rhs.artist) && MessagesPigeonInternal.deepEquals(lhs.artworkPath, rhs.artworkPath)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("MediaControlsConfig")
+    MessagesPigeonInternal.deepHash(value: enabled, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: title, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: artist, hasher: &hasher)
+    MessagesPigeonInternal.deepHash(value: artworkPath, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "MediaControlsConfig(enabled: \(String(describing: enabled)), title: \(String(describing: title)), artist: \(String(describing: artist)), artworkPath: \(String(describing: artworkPath)))"
+  }
+}
+
 private class MessagesPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -398,6 +595,12 @@ private class MessagesPigeonCodecReader: FlutterStandardReader {
       return CreateResponse.fromList(self.readValue() as! [Any?])
     case 131:
       return TrackInfo.fromList(self.readValue() as! [Any?])
+    case 132:
+      return MediaStreamInfo.fromList(self.readValue() as! [Any?])
+    case 133:
+      return MediaInfo.fromList(self.readValue() as! [Any?])
+    case 134:
+      return MediaControlsConfig.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -414,6 +617,15 @@ private class MessagesPigeonCodecWriter: FlutterStandardWriter {
       super.writeValue(value.toList())
     } else if let value = value as? TrackInfo {
       super.writeByte(131)
+      super.writeValue(value.toList())
+    } else if let value = value as? MediaStreamInfo {
+      super.writeByte(132)
+      super.writeValue(value.toList())
+    } else if let value = value as? MediaInfo {
+      super.writeByte(133)
+      super.writeValue(value.toList())
+    } else if let value = value as? MediaControlsConfig {
+      super.writeByte(134)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -454,6 +666,22 @@ protocol SecureVideoHostApi {
   func setBackgroundPlayback(playerId: Int64, enabled: Bool) throws
   /// Window-level capture protection (FLAG_SECURE / iOS best effort).
   func setSecureFlag(enabled: Bool) throws
+  /// Keeps the screen on while true (FLAG_KEEP_SCREEN_ON / isIdleTimerDisabled).
+  /// Global window/app level — callers ref-count on the Dart side.
+  func setKeepScreenAwake(enabled: Bool) throws
+  /// Shows/updates (enabled=true) or tears down (enabled=false) system media
+  /// controls for the player: Android media notification, iOS Now Playing.
+  func configureMediaControls(playerId: Int64, config: MediaControlsConfig) throws
+  /// Probes a (possibly encrypted) media file: container, duration, and
+  /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
+  /// Decryption happens through the same CipherAdapter as playback.
+  func getMediaInfo(path: String, schemeType: String, schemeParams: [String?: Any?]) throws -> MediaInfo
+  /// Window screen brightness 0.0–1.0; pass -1 to restore system default.
+  /// Android: WindowManager.LayoutParams.screenBrightness.
+  /// iOS: UIScreen.main.brightness (persists — callers should restore).
+  func setScreenBrightness(brightness: Double) throws
+  /// Current window brightness 0.0–1.0 (-1 = following system default).
+  func getScreenBrightness() throws -> Double
   /// Starts encrypt (encrypt=true) or decrypt file transform.
   /// Returns operationId; progress on EventChannel 'secure_video_player/crypto_events'.
   func startCrypto(inputPath: String, outputPath: String, schemeType: String, schemeParams: [String?: Any?], encrypt: Bool) throws -> String
@@ -703,6 +931,93 @@ class SecureVideoHostApiSetup {
       }
     } else {
       setSecureFlagChannel.setMessageHandler(nil)
+    }
+    /// Keeps the screen on while true (FLAG_KEEP_SCREEN_ON / isIdleTimerDisabled).
+    /// Global window/app level — callers ref-count on the Dart side.
+    let setKeepScreenAwakeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.setKeepScreenAwake\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setKeepScreenAwakeChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let enabledArg = args[0] as! Bool
+        do {
+          try api.setKeepScreenAwake(enabled: enabledArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setKeepScreenAwakeChannel.setMessageHandler(nil)
+    }
+    /// Shows/updates (enabled=true) or tears down (enabled=false) system media
+    /// controls for the player: Android media notification, iOS Now Playing.
+    let configureMediaControlsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.configureMediaControls\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      configureMediaControlsChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let playerIdArg = args[0] as! Int64
+        let configArg = args[1] as! MediaControlsConfig
+        do {
+          try api.configureMediaControls(playerId: playerIdArg, config: configArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      configureMediaControlsChannel.setMessageHandler(nil)
+    }
+    /// Probes a (possibly encrypted) media file: container, duration, and
+    /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
+    /// Decryption happens through the same CipherAdapter as playback.
+    let getMediaInfoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getMediaInfoChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let pathArg = args[0] as! String
+        let schemeTypeArg = args[1] as! String
+        let schemeParamsArg = args[2] as! [String?: Any?]
+        do {
+          let result = try api.getMediaInfo(path: pathArg, schemeType: schemeTypeArg, schemeParams: schemeParamsArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getMediaInfoChannel.setMessageHandler(nil)
+    }
+    /// Window screen brightness 0.0–1.0; pass -1 to restore system default.
+    /// Android: WindowManager.LayoutParams.screenBrightness.
+    /// iOS: UIScreen.main.brightness (persists — callers should restore).
+    let setScreenBrightnessChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.setScreenBrightness\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setScreenBrightnessChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let brightnessArg = args[0] as! Double
+        do {
+          try api.setScreenBrightness(brightness: brightnessArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setScreenBrightnessChannel.setMessageHandler(nil)
+    }
+    /// Current window brightness 0.0–1.0 (-1 = following system default).
+    let getScreenBrightnessChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getScreenBrightness\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      getScreenBrightnessChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.getScreenBrightness()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      getScreenBrightnessChannel.setMessageHandler(nil)
     }
     /// Starts encrypt (encrypt=true) or decrypt file transform.
     /// Returns operationId; progress on EventChannel 'secure_video_player/crypto_events'.

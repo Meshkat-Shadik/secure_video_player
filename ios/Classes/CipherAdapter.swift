@@ -13,16 +13,26 @@ public protocol CipherAdapter {
 
 public extension CipherAdapter {
     func plaintextSize(cipherFileSize: Int64) -> Int64 { cipherFileSize }
+
+    /// Encrypt-aware, throwing variant used by the file-cryptor path so a
+    /// transform failure fails the job instead of silently writing raw bytes.
+    /// Default delegates to the legacy non-throwing transform (direction is
+    /// irrelevant for the symmetric built-in ciphers).
+    func transform(_ buffer: inout Data, filePosition: Int64, encrypt: Bool) throws {
+        transform(&buffer, filePosition: filePosition)
+    }
 }
 
 enum CipherError: Error, LocalizedError {
     case badParams(String)
     case notRegistered(String)
+    case transformFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .badParams(let m): return m
         case .notRegistered(let n): return "No CipherAdapter registered for '\(n)'"
+        case .transformFailed(let m): return m
         }
     }
 }

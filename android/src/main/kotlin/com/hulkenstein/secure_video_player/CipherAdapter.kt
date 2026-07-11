@@ -16,6 +16,16 @@ interface CipherAdapter {
     /** In-place transform of [length] bytes at absolute file [filePosition]. */
     fun transform(buffer: ByteArray, offset: Int, length: Int, filePosition: Long)
 
+    /**
+     * Encrypt-aware overload. [encrypt] = true when producing ciphertext
+     * (FileCryptor encrypt), false when decrypting (playback / decrypt). The
+     * default ignores it and delegates to [transform] — correct for the
+     * built-in CTR/XOR schemes, which are involutions. Adapters that are not
+     * symmetric (e.g. the Dart proxy) override this.
+     */
+    fun transform(buffer: ByteArray, offset: Int, length: Int, filePosition: Long, encrypt: Boolean) =
+        transform(buffer, offset, length, filePosition)
+
     /** Plaintext size for a given ciphertext size (identity for built-ins). */
     fun plaintextSize(cipherFileSize: Long): Long = cipherFileSize
 }
@@ -37,6 +47,13 @@ object CipherRegistry {
     @Synchronized
     fun register(name: String, factory: () -> CipherAdapter) {
         factories[name] = factory
+    }
+
+    /** Removes [name] only if [factory] is still the registered one (identity
+     *  match), so a later engine's registration is never clobbered. */
+    @Synchronized
+    fun unregister(name: String, factory: () -> CipherAdapter) {
+        if (factories[name] === factory) factories.remove(name)
     }
 
     @Synchronized
@@ -90,8 +107,15 @@ class XorLegacyAdapter : CipherAdapter {
  * JCE/AES-NI hardware acceleration applies.
  */
 class AesCtrAdapter : CipherAdapter {
-    private lateinit var keySpec: SecretKeySpec
     private lateinit var nonce: ByteArray
+    // Cipher created and keyed once per adapter (key is immutable for its
+    // lifetime). Reused across transform() calls to skip the JCE provider
+    // lookup + AES key-schedule expansion on every chunk. ECB doFinal carries
+    // no state between calls, so no re-init is needed. Safe without locks: each
+    // adapter instance is owned by a single reader (ExoPlayer DataSource,
+    // FileCryptor's single-thread executor, or a MediaInfoProbe source guarded
+    // by synchronized(file)) and transform() is never called concurrently.
+    private lateinit var cipher: Cipher
 
     override fun init(params: Map<String, Any?>) {
         val key = params["key"] as? ByteArray
@@ -100,7 +124,8 @@ class AesCtrAdapter : CipherAdapter {
         nonce = params["nonce"] as? ByteArray
             ?: throw IllegalArgumentException("aesCtr requires 'nonce' bytes")
         require(nonce.size == 8) { "nonce must be 8 bytes" }
-        keySpec = SecretKeySpec(key, "AES")
+        cipher = Cipher.getInstance("AES/ECB/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"))
     }
 
     override fun transform(buffer: ByteArray, offset: Int, length: Int, filePosition: Long) {
@@ -121,8 +146,6 @@ class AesCtrAdapter : CipherAdapter {
             }
         }
 
-        val cipher = Cipher.getInstance("AES/ECB/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec)
         val keystream = cipher.doFinal(counters)
 
         for (i in 0 until length) {
