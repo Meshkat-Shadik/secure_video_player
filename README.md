@@ -56,8 +56,42 @@ await controller.selectTrack('subtitle', subs.first.id);
 await controller.enterPictureInPicture();
 await controller.setBackgroundPlayback(true);
 await setScreenCaptureProtection(true);      // FLAG_SECURE
+final info = await getMediaInfo(path, scheme: scheme); // codecs/streams/fps
 controller.dispose();
 ```
+
+## Player widget features
+
+`SecureVideoPlayer` (texture mode) ships controls with: seek bar + buffered
+indicator, speed menu, track/subtitle selection, PiP, mute, fullscreen,
+**double-tap left/right seek** (`doubleTapSeek`, default 5 s), **fit cycle**
+(fit/crop/stretch), **rotate button** (fullscreen), and **next/previous**
+buttons when you pass `onNext`/`onPrevious`. In fullscreen, vertical swipes on
+the **left half set screen brightness** and the **right half set volume**,
+with a HUD overlay. Fullscreen auto-picks portrait/landscape from the video's
+display aspect (rotation metadata applied).
+
+Rotation metadata is handled end-to-end: the platform reports display-oriented
+sizes plus a `rotationCorrection`, and the widget rotates the raw texture —
+portrait phone recordings render upright in both texture and platformView
+modes.
+
+### Picture-in-picture (Android)
+
+PiP silently fails unless the **app's activity opts in** — add to your
+`AndroidManifest.xml`:
+
+```xml
+<activity
+    android:name=".MainActivity"
+    android:supportsPictureInPicture="true"
+    android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+    ...>
+```
+
+The plugin polls PiP state, so `value.isPipActive` also flips back to false
+when the user closes/expands the PiP window; `SecureVideoPlayer` hides its
+controls while PiP is active.
 
 ## Built-in schemes
 
@@ -67,7 +101,8 @@ controller.dispose();
 | `CryptoScheme.xorLegacy()` | Hulkenstein backward compat (skip 512 B, XOR 256 B with `0xAB`) | `skipOffset`, `corruptionSize`, `key` |
 | `CryptoScheme.aesCtr(...)` | **recommended** — real encryption, O(1) seek | `key` (16/32 B), `nonce` (8 B) |
 | `CryptoScheme.clearKey(...)` | CENC-packaged MP4/DASH, Android only | `keys` (base64url kid→k) |
-| `CryptoScheme.custom(...)` | your own cipher (guide below) | `adapterName` + free-form params |
+| `CryptoScheme.custom(...)` | your own **native** cipher (guide below) | `adapterName` + free-form params |
+| `CryptoScheme.dartProxy(...)` | your own cipher in **pure Dart**, no native code (guide below) | `channelId` |
 
 Errors are typed: `SecureVideoException` with `invalidKey`, `fileNotFound`,
 `corruptStream`, `adapterNotRegistered`, `drmError`, `platformNotSupported`, `disposed`.
@@ -150,6 +185,67 @@ await controller.initialize(source: VideoSource.file(outPath), scheme: scheme);
 
 Unregistered name → `SecureVideoException(adapterNotRegistered)` with the fix in
 the message. The example app's `repeatingXor` adapter is a working reference.
+
+## Custom encryption in Dart
+
+Don't want to touch Kotlin/Swift? Implement the cipher in pure Dart with
+`CryptoScheme.dartProxy`. A built-in native adapter forwards every read chunk to
+your `DartCipherDelegate` over a dedicated channel and returns the transformed
+bytes. Same position-addressable rule as native adapters: `decrypt(chunk,
+fileOffset)` must be a pure function of its arguments and return exactly
+`chunk.length` bytes.
+
+```dart
+import 'dart:typed_data';
+import 'package:secure_video_player/secure_video_player.dart';
+
+/// Repeating-key XOR — an involution, so the same delegate encrypts and decrypts.
+class XorDelegate extends DartCipherDelegate {
+  XorDelegate(this.key);
+  final List<int> key;
+
+  Uint8List _xor(Uint8List chunk, int fileOffset) {
+    final out = Uint8List(chunk.length);
+    for (var i = 0; i < chunk.length; i++) {
+      out[i] = chunk[i] ^ key[(fileOffset + i) % key.length];
+    }
+    return out;
+  }
+
+  @override
+  Uint8List decrypt(Uint8List chunk, int fileOffset) => _xor(chunk, fileOffset);
+
+  @override
+  Uint8List encrypt(Uint8List chunk, int fileOffset) => _xor(chunk, fileOffset);
+}
+
+// 1. Register once, before playback (keep the handle to unregister later).
+final registration = DartCipher.register('myXor', XorDelegate([0x5A, 0xC3, 0x0F]));
+
+// 2. Reference it from a scheme with the SAME channelId.
+const scheme = CryptoScheme.dartProxy(channelId: 'myXor');
+await SecureVideoEncryptor.encrypt(inPath, outPath, scheme);
+await controller.initialize(source: VideoSource.file(outPath), scheme: scheme);
+
+// 3. When done (e.g. in dispose):
+registration.dispose();
+```
+
+**Performance:** every read chunk makes a round trip to the Dart isolate
+(~64 KB on Android, loader-request sizes on iOS). That is fine for moderate
+bitrates, but native adapters (`CryptoScheme.custom` / `aesCtr`) remain the fast
+path for 4K/high-bitrate content. Keep the delegate light — never do heavy
+synchronous work in `decrypt`, or playback will stutter. `getMediaInfo` may probe
+on the platform's main thread, where a Dart cipher can't run; it fails fast with
+a clear error rather than deadlocking, so probe encrypted files with a native
+scheme if you need metadata.
+
+**Multi-engine:** `dartProxy` binds to the **most recently attached** Flutter
+engine's messenger (it's registered in a process-global cipher registry). Setups
+that run more than one engine concurrently (e.g. multiple `FlutterEngine`s or
+add-to-app with several hosts) are **not supported today** — the last engine to
+attach wins, and detaching it unregisters the adapter. Use a native
+`CryptoScheme.custom` adapter in multi-engine apps.
 
 ## Example app
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart' as p;
 import 'package:secure_video_player/secure_video_player.dart';
 
 import 'demo_crypto.dart';
@@ -21,7 +21,7 @@ class SampleMedia {
   static late final String externalVttPath;
 
   static Future<void> prepare() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await p.getApplicationDocumentsDirectory();
     final root = Directory('${dir.path}/svp_samples');
     root.createSync(recursive: true);
 
