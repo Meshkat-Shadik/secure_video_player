@@ -33,6 +33,7 @@ object FileCryptor {
         inputPath: String,
         outputPath: String,
         adapter: CipherAdapter,
+        encrypt: Boolean,
         onProgress: (Progress) -> Unit,
     ): String {
         val id = UUID.randomUUID().toString()
@@ -64,7 +65,7 @@ object FileCryptor {
                             }
                             val read = ins.read(buffer)
                             if (read == -1) break
-                            adapter.transform(buffer, 0, read, position)
+                            adapter.transform(buffer, 0, read, position, encrypt)
                             outs.write(buffer, 0, read)
                             position += read
                             onProgress(Progress(id, position, total, false))

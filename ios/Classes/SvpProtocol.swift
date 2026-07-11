@@ -6,6 +6,7 @@ enum SvpProtocol {
     // Channels
     static let channelCryptoEvents = "secure_video_player/crypto_events"
     static let platformViewType = "secure_video_player/platform_view"
+    static let channelDartCipherPrefix = "secure_video_player/dart_cipher_"
     static func playerEventsChannel(_ playerId: Int64) -> String {
         "secure_video_player/events_\(playerId)"
     }
@@ -25,6 +26,7 @@ enum SvpProtocol {
     static let keyDuration = "duration"
     static let keyWidth = "width"
     static let keyHeight = "height"
+    static let keyRotationCorrection = "rotationCorrection"
     static let keyPosition = "position"
     static let keyBuffered = "buffered"
     static let keyIsPlaying = "isPlaying"
@@ -33,11 +35,20 @@ enum SvpProtocol {
     static let keyMessage = "message"
     static let keyPlayerId = "playerId"
 
+    // Crypto progress payload keys (channelCryptoEvents)
+    static let keyOperationId = "operationId"
+    static let keyBytesProcessed = "bytesProcessed"
+    static let keyTotalBytes = "totalBytes"
+    static let keyDone = "done"
+    static let keyError = "error"
+    static let keyErrorCode = "errorCode"
+
     // Scheme types
     static let schemeNone = "none"
     static let schemeXorLegacy = "xorLegacy"
     static let schemeAesCtr = "aesCtr"
     static let schemeClearKey = "clearKey"
+    static let schemeDartProxy = "dartProxy"
 
     // Source types
     static let sourceFile = "file"

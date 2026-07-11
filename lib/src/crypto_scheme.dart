@@ -32,6 +32,15 @@ sealed class CryptoScheme {
     Map<String, Object?> params,
   }) = CustomScheme;
 
+  /// A cipher implemented in pure Dart via a [DartCipherDelegate]. No native
+  /// code required: a built-in native adapter proxies each read chunk to Dart
+  /// over `secure_video_player/dart_cipher_<channelId>`. Register the delegate
+  /// with `DartCipher.register(channelId, delegate)` before use. See the
+  /// README "Custom encryption in Dart" section for the perf tradeoff.
+  const factory CryptoScheme.dartProxy({
+    required String channelId,
+  }) = DartProxyScheme;
+
   /// Wire identifier understood by the native side.
   String get type;
 
@@ -109,6 +118,21 @@ class ClearKeyScheme extends CryptoScheme {
 
   @override
   Map<String, Object?> get params => {'keys': keys};
+}
+
+/// A cipher whose encrypt/decrypt runs in Dart via a `DartCipherDelegate`,
+/// bridged by the built-in native `dartProxy` adapter. [channelId] must match
+/// the id passed to `DartCipher.register`.
+class DartProxyScheme extends CryptoScheme {
+  const DartProxyScheme({required this.channelId});
+
+  final String channelId;
+
+  @override
+  String get type => 'dartProxy';
+
+  @override
+  Map<String, Object?> get params => {'channelId': channelId};
 }
 
 /// A cipher registered natively via `CipherRegistry.register(adapterName)`.

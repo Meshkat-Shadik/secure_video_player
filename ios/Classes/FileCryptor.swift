@@ -36,6 +36,7 @@ final class FileCryptor {
         inputPath: String,
         outputPath: String,
         adapter: CipherAdapter,
+        encrypt: Bool,
         onProgress: @escaping (Progress) -> Void
     ) -> String {
         let id = UUID().uuidString
@@ -72,7 +73,17 @@ final class FileCryptor {
                 }
                 var data = input.readData(ofLength: chunk)
                 if data.isEmpty { break }
-                adapter.transform(&data, filePosition: position)
+                do {
+                    try adapter.transform(&data, filePosition: position, encrypt: encrypt)
+                } catch {
+                    try? output.close()
+                    try? FileManager.default.removeItem(atPath: outputPath)
+                    onProgress(Progress(operationId: id, bytesProcessed: position,
+                                        totalBytes: total, done: true,
+                                        error: error.localizedDescription,
+                                        errorCode: SvpProtocol.errorCorruptStream))
+                    return
+                }
                 output.write(data)
                 position += Int64(data.count)
                 onProgress(Progress(operationId: id, bytesProcessed: position,

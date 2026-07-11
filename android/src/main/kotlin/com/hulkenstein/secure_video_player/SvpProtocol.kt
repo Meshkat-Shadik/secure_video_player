@@ -8,6 +8,7 @@ object SvpProtocol {
     // Channels
     const val CHANNEL_CRYPTO_EVENTS = "secure_video_player/crypto_events"
     const val PLATFORM_VIEW_TYPE = "secure_video_player/platform_view"
+    const val CHANNEL_DART_CIPHER_PREFIX = "secure_video_player/dart_cipher_"
     fun playerEventsChannel(playerId: Long) = "secure_video_player/events_$playerId"
 
     // Player event names + payload keys
@@ -25,6 +26,7 @@ object SvpProtocol {
     const val KEY_DURATION = "duration"
     const val KEY_WIDTH = "width"
     const val KEY_HEIGHT = "height"
+    const val KEY_ROTATION_CORRECTION = "rotationCorrection"
     const val KEY_POSITION = "position"
     const val KEY_BUFFERED = "buffered"
     const val KEY_IS_PLAYING = "isPlaying"
@@ -46,11 +48,13 @@ object SvpProtocol {
     const val SCHEME_XOR_LEGACY = "xorLegacy"
     const val SCHEME_AES_CTR = "aesCtr"
     const val SCHEME_CLEAR_KEY = "clearKey"
+    const val SCHEME_DART_PROXY = "dartProxy"
 
     // Source types
     const val SOURCE_FILE = "file"
     const val SOURCE_ASSET = "asset"
     const val SOURCE_URL = "url"
+    const val SOURCE_CONTENT_URI = "contentUri"
 
     // Render modes
     const val RENDER_TEXTURE = "texture"
