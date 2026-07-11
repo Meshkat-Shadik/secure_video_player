@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,10 +87,12 @@ class SecureVideoPlayer extends StatefulWidget {
   final VoidCallback? onPrevious;
 
   @override
-  State<SecureVideoPlayer> createState() => _SecureVideoPlayerState();
+  State<SecureVideoPlayer> createState() => SecureVideoPlayerState();
 }
 
-class _SecureVideoPlayerState extends State<SecureVideoPlayer> {
+/// Public so callers can drive view-level actions (fullscreen-aware
+/// picture-in-picture) via a `GlobalKey<SecureVideoPlayerState>`.
+class SecureVideoPlayerState extends State<SecureVideoPlayer> {
   late final PlayerUiState _ui = PlayerUiState(fit: widget.fit);
 
   /// Tracks the CURRENT controller so the fullscreen route (a separate
@@ -96,6 +100,11 @@ class _SecureVideoPlayerState extends State<SecureVideoPlayer> {
   /// steps: onNext/onPrevious swap `widget.controller` and dispose the old
   /// one, which otherwise left fullscreen rendering a dead player (black).
   late final _controller = ValueNotifier(widget.controller);
+
+  bool _fullscreenOpen = false;
+  Route<void>? _pipHostRoute;
+  VoidCallback? _pipWatcher;
+  SecureVideoController? _pipWatched;
 
   @override
   void didUpdateWidget(SecureVideoPlayer oldWidget) {
@@ -105,9 +114,112 @@ class _SecureVideoPlayerState extends State<SecureVideoPlayer> {
 
   @override
   void dispose() {
+    _stopPipWatcher();
     _controller.dispose();
     _ui.dispose();
     super.dispose();
+  }
+
+  /// Enters picture-in-picture the way users expect it to look.
+  ///
+  /// Android shrinks the WHOLE activity into the PiP window, so calling
+  /// [SecureVideoController.enterPictureInPicture] from an inline player
+  /// captures the surrounding scaffold/appbar too. This method first pushes a
+  /// bare fullscreen video route (skipped when the player is already
+  /// fullscreen), then enters PiP, and pops that route again as soon as PiP
+  /// ends — leaving the screen exactly as it was. On iOS the PiP window
+  /// floats independently of the app UI, so no host route is used.
+  ///
+  /// Returns false when the platform rejects PiP (and cleans up the route).
+  Future<bool> enterPictureInPicture() async {
+    final controller = widget.controller;
+    if (controller.value.isPipActive) return true;
+
+    final needsHostRoute = defaultTargetPlatform == TargetPlatform.android &&
+        !_fullscreenOpen &&
+        _pipHostRoute == null;
+    if (needsHostRoute) {
+      final navigator = Navigator.of(context, rootNavigator: true);
+      final route = PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: const Duration(milliseconds: 150),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            FadeTransition(
+          opacity: animation,
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: ValueListenableBuilder<SecureVideoController>(
+              valueListenable: _controller,
+              builder: (context, controller, _) => _PlayerSurface(
+                controller: controller,
+                ui: _ui,
+                showControls: false,
+                isFullscreen: true,
+                doubleTapSeek: widget.doubleTapSeek,
+                onNext: null,
+                onPrevious: null,
+                onToggleFullscreen: null,
+              ),
+            ),
+          ),
+        ),
+      );
+      _pipHostRoute = route;
+      unawaited(navigator.push(route).whenComplete(() {
+        if (_pipHostRoute == route) _pipHostRoute = null;
+      }));
+      // Let the host route paint before the OS snapshots the activity into
+      // the PiP window, otherwise the old screen still flashes inside it.
+      await WidgetsBinding.instance.endOfFrame;
+    }
+
+    bool ok;
+    try {
+      ok = await controller.enterPictureInPicture();
+    } catch (_) {
+      ok = false;
+    }
+    if (!ok) {
+      _dismissPipHostRoute();
+      return false;
+    }
+    _watchPipExit(controller);
+    return true;
+  }
+
+  /// Pops the host route once `isPipActive` has gone true → false, whether
+  /// the user closed the PiP window or expanded it back into the app.
+  void _watchPipExit(SecureVideoController controller) {
+    if (_pipWatcher != null) return;
+    var sawActive = controller.value.isPipActive;
+    void listener() {
+      if (controller.value.isPipActive) {
+        sawActive = true;
+        return;
+      }
+      if (!sawActive) return;
+      _stopPipWatcher();
+      _dismissPipHostRoute();
+    }
+
+    _pipWatcher = listener;
+    _pipWatched = controller;
+    controller.addListener(listener);
+  }
+
+  void _stopPipWatcher() {
+    final watcher = _pipWatcher;
+    if (watcher != null) _pipWatched?.removeListener(watcher);
+    _pipWatcher = null;
+    _pipWatched = null;
+  }
+
+  void _dismissPipHostRoute() {
+    final route = _pipHostRoute;
+    _pipHostRoute = null;
+    if (route == null || !route.isActive) return;
+    route.navigator?.removeRoute(route);
   }
 
   Future<void> _enterFullscreen(BuildContext context) async {
@@ -126,6 +238,7 @@ class _SecureVideoPlayerState extends State<SecureVideoPlayer> {
     await SystemChrome.setPreferredOrientations(orientations);
     if (!context.mounted) return;
 
+    _fullscreenOpen = true;
     await Navigator.of(context, rootNavigator: true).push<void>(
       PageRouteBuilder(
         opaque: true,
@@ -155,6 +268,7 @@ class _SecureVideoPlayerState extends State<SecureVideoPlayer> {
       ),
     );
 
+    _fullscreenOpen = false;
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     await SystemChrome.setPreferredOrientations(
         widget.restoreOrientationsAfterFullscreen ?? DeviceOrientation.values);

@@ -16,6 +16,7 @@ class LifecycleScreen extends StatefulWidget {
 
 class _LifecycleScreenState extends State<LifecycleScreen> {
   final controller = SecureVideoController();
+  final _playerKey = GlobalKey<SecureVideoPlayerState>();
   bool _background = false;
   bool _secure = false;
   String _pipStatus = '';
@@ -56,7 +57,11 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
                     icon: const Icon(Icons.picture_in_picture_alt),
                     label: const Text('Enter PiP'),
                     onPressed: () async {
-                      final ok = await controller.enterPictureInPicture();
+                      // Widget-level PiP: hosts a bare fullscreen video route
+                      // first (Android shrinks the whole activity into the
+                      // PiP window) and pops it again when PiP ends.
+                      final ok = await _playerKey.currentState!
+                          .enterPictureInPicture();
                       setState(() => _pipStatus = ok
                           ? 'PiP entered'
                           : 'PiP unavailable '
@@ -94,7 +99,9 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
               ],
             ),
           ),
-          Expanded(child: SecureVideoPlayer(controller: controller)),
+          Expanded(
+              child:
+                  SecureVideoPlayer(key: _playerKey, controller: controller)),
         ],
       ),
     );
