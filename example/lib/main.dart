@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 
 import 'sample_media.dart';
 import 'screens/buffer_screen.dart';
+import 'screens/dart_cipher_screen.dart';
 import 'screens/encrypt_play_screen.dart';
 import 'screens/error_cases_screen.dart';
 import 'screens/lifecycle_screen.dart';
 import 'screens/list_stress_screen.dart';
+import 'screens/media_controls_screen.dart';
 import 'screens/multi_player_screen.dart';
+import 'screens/progress_triggers_sleep_timer_screen.dart';
 import 'screens/render_toggle_screen.dart';
 import 'screens/scheme_matrix_screen.dart';
+import 'screens/screen_awake_screen.dart';
 import 'screens/seek_stress_screen.dart';
+import 'screens/srt_subtitles_screen.dart';
 import 'screens/tracks_screen.dart';
 
 void main() {
@@ -90,6 +95,32 @@ class _GalleryScreenState extends State<GalleryScreen> {
       'Buffer tuning (low RAM)',
       'lowRam vs default BufferConfig side by side',
       BufferScreen.new,
+    ),
+    // NEW FEATURE DEMOS
+    (
+      'Progress triggers + sleep timer',
+      'Fire callback at position, set sleep timer, adjust in real time',
+      ProgressTriggersAndSleepTimerScreen.new,
+    ),
+    (
+      'SRT subtitles + delay',
+      'Load SRT cues, render overlay, adjust delay slider (≤50ms sync)',
+      SrtSubtitlesScreen.new,
+    ),
+    (
+      'Media controls',
+      'System notification (Android) + now-playing (iOS) integration',
+      MediaControlsScreen.new,
+    ),
+    (
+      'Custom Dart cipher',
+      'Register DartCipherDelegate, decrypt in Dart via IPC',
+      DartCipherScreen.new,
+    ),
+    (
+      'Screen awake',
+      'keepScreenAwakeWhilePlaying option + manual override (true/false/auto)',
+      ScreenAwakeScreen.new,
     ),
   ];
 
