@@ -20,6 +20,7 @@ class SecureVideoControls extends StatefulWidget {
     this.onNext,
     this.onPrevious,
     this.onToggleFullscreen,
+    this.onEnterPip,
   });
 
   final SecureVideoController controller;
@@ -41,6 +42,11 @@ class SecureVideoControls extends StatefulWidget {
 
   /// Null hides the fullscreen button.
   final VoidCallback? onToggleFullscreen;
+
+  /// Overrides what the PiP button does. [SecureVideoPlayer] passes its
+  /// fullscreen-aware entry point here; when null the button calls
+  /// [SecureVideoController.enterPictureInPicture] directly.
+  final VoidCallback? onEnterPip;
 
   @override
   State<SecureVideoControls> createState() => _SecureVideoControlsState();
@@ -303,7 +309,8 @@ class _SecureVideoControlsState extends State<SecureVideoControls> {
               _iconButton(
                 Icons.picture_in_picture_alt,
                 tooltip: 'Picture in picture',
-                onPressed: () => _c.enterPictureInPicture(),
+                onPressed:
+                    widget.onEnterPip ?? () => _c.enterPictureInPicture(),
               ),
               _tracksButton(context),
             ],

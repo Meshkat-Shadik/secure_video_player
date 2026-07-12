@@ -261,6 +261,7 @@ class SecureVideoPlayerState extends State<SecureVideoPlayer> {
                 onPrevious: widget.onPrevious,
                 onToggleFullscreen: () =>
                     Navigator.of(context, rootNavigator: true).pop(),
+                onEnterPip: enterPictureInPicture,
               ),
             ),
           ),
@@ -286,6 +287,7 @@ class SecureVideoPlayerState extends State<SecureVideoPlayer> {
       onPrevious: widget.onPrevious,
       onToggleFullscreen:
           widget.allowFullscreen ? () => _enterFullscreen(context) : null,
+      onEnterPip: enterPictureInPicture,
     );
   }
 }
@@ -301,6 +303,7 @@ class _PlayerSurface extends StatelessWidget {
     required this.onNext,
     required this.onPrevious,
     required this.onToggleFullscreen,
+    this.onEnterPip,
   });
 
   final SecureVideoController controller;
@@ -311,6 +314,7 @@ class _PlayerSurface extends StatelessWidget {
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
   final VoidCallback? onToggleFullscreen;
+  final VoidCallback? onEnterPip;
 
   @override
   Widget build(BuildContext context) {
@@ -359,6 +363,7 @@ class _PlayerSurface extends StatelessWidget {
                       onNext: onNext,
                       onPrevious: onPrevious,
                       onToggleFullscreen: onToggleFullscreen,
+                      onEnterPip: onEnterPip,
                     ),
                 ],
               ),
