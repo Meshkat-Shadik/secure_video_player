@@ -32,13 +32,25 @@ class _SrtSubtitlesScreenState extends State<SrtSubtitlesScreen> {
         scheme: DemoCrypto.aesCtr,
         options: const PlayerOptions(autoPlay: true, looping: false),
       );
-      // Load embedded/sample SRT (create synthetic cues for demo).
-      _cues = [
-        SubtitleCue(index: 1, start: Duration.zero, end: const Duration(seconds: 5), text: 'Welcome to the video'),
-        SubtitleCue(index: 2, start: const Duration(seconds: 5), end: const Duration(seconds: 10), text: 'This is a <i>demo</i> subtitle'),
-        SubtitleCue(index: 3, start: const Duration(seconds: 10), end: const Duration(seconds: 20), text: '<b>Bold subtitle</b>'),
-        SubtitleCue(index: 4, start: const Duration(seconds: 20), end: const Duration(seconds: 30), text: 'Final subtitle cue'),
-      ];
+      // Real SRT text through the real parser (CRLF, multi-line, tags).
+      _cues = SrtSubtitles.fromString('''
+1
+00:00:00,000 --> 00:00:05,000
+Welcome to the video
+
+2
+00:00:05,000 --> 00:00:10,000
+This is a <i>demo</i> subtitle
+rendered fully in Flutter
+
+3
+00:00:10,000 --> 00:00:20,000
+<b>Bold subtitle</b> over encrypted video
+
+4
+00:00:20,000 --> 00:00:30,000
+Drag the delay slider to shift timing
+''');
       setState(() => _loaded = true);
     } on SecureVideoException catch (e) {
       if (mounted) {

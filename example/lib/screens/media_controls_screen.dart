@@ -15,9 +15,9 @@ class MediaControlsScreen extends StatefulWidget {
 
 class _MediaControlsScreenState extends State<MediaControlsScreen> {
   final controller = SecureVideoController();
+  final _titleController = TextEditingController(text: 'Sample Video');
+  final _artistController = TextEditingController(text: 'Demo Artist');
   bool _controlsEnabled = false;
-  String _title = 'Sample Video';
-  String _artist = 'Demo Artist';
 
   @override
   void initState() {
@@ -38,6 +38,8 @@ class _MediaControlsScreenState extends State<MediaControlsScreen> {
         MediaControlsOptions(enabled: false),
       );
     }
+    _titleController.dispose();
+    _artistController.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -45,13 +47,7 @@ class _MediaControlsScreenState extends State<MediaControlsScreen> {
   void _toggleControls() {
     setState(() => _controlsEnabled = !_controlsEnabled);
     if (_controlsEnabled) {
-      controller.updateMediaControls(
-        MediaControlsOptions(
-          enabled: true,
-          title: _title,
-          artist: _artist,
-        ),
-      );
+      _updateMetadata();
     } else {
       controller.updateMediaControls(
         MediaControlsOptions(enabled: false),
@@ -64,8 +60,8 @@ class _MediaControlsScreenState extends State<MediaControlsScreen> {
       controller.updateMediaControls(
         MediaControlsOptions(
           enabled: true,
-          title: _title,
-          artist: _artist,
+          title: _titleController.text,
+          artist: _artistController.text,
         ),
       );
     }
@@ -97,20 +93,14 @@ class _MediaControlsScreenState extends State<MediaControlsScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     decoration: const InputDecoration(labelText: 'Title'),
-                    controller: TextEditingController(text: _title),
-                    onChanged: (v) {
-                      _title = v;
-                      _updateMetadata();
-                    },
+                    controller: _titleController,
+                    onChanged: (_) => _updateMetadata(),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     decoration: const InputDecoration(labelText: 'Artist/Author'),
-                    controller: TextEditingController(text: _artist),
-                    onChanged: (v) {
-                      _artist = v;
-                      _updateMetadata();
-                    },
+                    controller: _artistController,
+                    onChanged: (_) => _updateMetadata(),
                   ),
                   const SizedBox(height: 8),
                   const Text(

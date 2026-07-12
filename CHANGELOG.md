@@ -32,6 +32,14 @@ Feature wave: six new capabilities + P0 performance fixes.
   before send — the messenger dispatches bytes `[0, position)`), so every read
   failed with "Dart cipher delegate returned an error or no data". Verified by
   an on-device integration test (encrypt roundtrip + real playback).
+* **Fix**: sideloaded external subtitles (SRT/VTT) crashed playback under
+  media3 1.10 ("Legacy decoding is disabled, can't handle text/vtt"). The
+  player now enables legacy subtitle decoding on the text renderer.
+* **Fix**: truncated / undecodable files now report `corruptStream` instead of
+  `unknown` — `CipherDataSource` throws a typed position-out-of-range error and
+  the error mapping covers decoder failures and reads past EOF.
+* On-device integration tests added under `example/integration_test/`
+  (dartProxy roundtrip, sideloaded VTT, error-case mapping, gallery smoke).
 
 ## 0.3.1
 
