@@ -676,6 +676,9 @@ interface SecureVideoHostApi {
    * Probes a (possibly encrypted) media file: container, duration, and
    * per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
    * Decryption happens through the same CipherAdapter as playback.
+   *
+   * Runs on a background task queue so the blocking probe never stalls the
+   * platform thread (ANR on slow storage / native schemes).
    */
   fun getMediaInfo(path: String, schemeType: String, schemeParams: Map<String?, Any?>): MediaInfo
   /**
@@ -702,6 +705,7 @@ interface SecureVideoHostApi {
     @JvmOverloads
     fun setUp(binaryMessenger: BinaryMessenger, api: SecureVideoHostApi?, messageChannelSuffix: String = "") {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      val taskQueue = binaryMessenger.makeBackgroundTaskQueue()
       run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.create$separatedMessageChannelSuffix", codec)
         if (api != null) {
@@ -1017,7 +1021,7 @@ interface SecureVideoHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo$separatedMessageChannelSuffix", codec, taskQueue)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>

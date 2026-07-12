@@ -675,6 +675,9 @@ protocol SecureVideoHostApi {
   /// Probes a (possibly encrypted) media file: container, duration, and
   /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
   /// Decryption happens through the same CipherAdapter as playback.
+  ///
+  /// Runs on a background task queue so the blocking probe never stalls the
+  /// platform thread (ANR on slow storage / native schemes).
   func getMediaInfo(path: String, schemeType: String, schemeParams: [String?: Any?]) throws -> MediaInfo
   /// Window screen brightness 0.0–1.0; pass -1 to restore system default.
   /// Android: WindowManager.LayoutParams.screenBrightness.
@@ -694,6 +697,11 @@ class SecureVideoHostApiSetup {
   /// Sets up an instance of `SecureVideoHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: SecureVideoHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+    #if os(iOS)
+      let taskQueue = binaryMessenger.makeBackgroundTaskQueue?()
+    #else
+      let taskQueue: FlutterTaskQueue? = nil
+    #endif
     let createChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.create\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       createChannel.setMessageHandler { message, reply in
@@ -970,7 +978,12 @@ class SecureVideoHostApiSetup {
     /// Probes a (possibly encrypted) media file: container, duration, and
     /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
     /// Decryption happens through the same CipherAdapter as playback.
-    let getMediaInfoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    ///
+    /// Runs on a background task queue so the blocking probe never stalls the
+    /// platform thread (ANR on slow storage / native schemes).
+    let getMediaInfoChannel = taskQueue == nil
+      ? FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+      : FlutterBasicMessageChannel(name: "dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec, taskQueue: taskQueue)
     if let api = api {
       getMediaInfoChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]

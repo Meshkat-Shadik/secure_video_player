@@ -940,6 +940,9 @@ class SecureVideoHostApi {
   /// Probes a (possibly encrypted) media file: container, duration, and
   /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
   /// Decryption happens through the same CipherAdapter as playback.
+  ///
+  /// Runs on a background task queue so the blocking probe never stalls the
+  /// platform thread (ANR on slow storage / native schemes).
   Future<MediaInfo> getMediaInfo(String path, String schemeType, Map<String?, Object?> schemeParams) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.secure_video_player.SecureVideoHostApi.getMediaInfo$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(

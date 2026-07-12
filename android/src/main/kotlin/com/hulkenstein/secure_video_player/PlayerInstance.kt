@@ -15,6 +15,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
@@ -98,6 +99,11 @@ class PlayerInstance(
     private var initializedSent = false
     private var lastPipActive = false
     private val subtitles = mutableListOf<MediaItem.SubtitleConfiguration>()
+    private data class TrackRestoreState(
+        val selectedTrackId: String?,
+        val disabled: Boolean,
+    )
+    private var pendingTrackRestore: Map<String, TrackRestoreState>? = null
     private val handler = Handler(Looper.getMainLooper())
     private var tickerRunning = false
     private val positionTicker = object : Runnable {
@@ -327,6 +333,7 @@ class PlayerInstance(
     override fun onPlaybackStateChanged(state: Int) {
         when (state) {
             Player.STATE_READY -> {
+                restoreTrackSelectionAfterRebuild()
                 if (!initializedSent) {
                     initializedSent = true
                     events.success(sizeEventPayload(SvpProtocol.EVENT_INITIALIZED) +
@@ -478,9 +485,50 @@ class PlayerInstance(
         rebuildSourcePreservingState()
     }
 
+    private fun snapshotTrackRestoreState(type: String): TrackRestoreState {
+        val trackType = trackTypeOf(type)
+        return TrackRestoreState(
+            selectedTrackId = getTracks(type).firstOrNull { it.selected }?.id,
+            disabled = player.trackSelectionParameters.disabledTrackTypes.contains(trackType),
+        )
+    }
+
+    private fun restoreTrackSelectionAfterRebuild() {
+        val restore = pendingTrackRestore ?: return
+        pendingTrackRestore = null
+
+        restore[SvpProtocol.TRACK_AUDIO]?.selectedTrackId?.let {
+            selectTrack(SvpProtocol.TRACK_AUDIO, it)
+        }
+        restore[SvpProtocol.TRACK_VIDEO]?.selectedTrackId?.let {
+            selectTrack(SvpProtocol.TRACK_VIDEO, it)
+        }
+        restore[SvpProtocol.TRACK_SUBTITLE]?.let { subtitle ->
+            when {
+                subtitle.selectedTrackId != null ->
+                    selectTrack(SvpProtocol.TRACK_SUBTITLE, subtitle.selectedTrackId)
+                subtitle.disabled -> {
+                    val trackType = trackTypeOf(SvpProtocol.TRACK_SUBTITLE)
+                    val builder = player.trackSelectionParameters.buildUpon()
+                        .clearOverridesOfType(trackType)
+                        .setTrackTypeDisabled(trackType, true)
+                    player.trackSelectionParameters = builder.build()
+                }
+            }
+        }
+    }
+
+    override fun onTracksChanged(tracks: Tracks) {
+        restoreTrackSelectionAfterRebuild()
+    }
+
     /** Rebuilds the media source (subtitles / metadata changes) in place. */
     private fun rebuildSourcePreservingState() {
-        // TODO(review): preserve track selection overrides across rebuild
+        pendingTrackRestore = mapOf(
+            SvpProtocol.TRACK_AUDIO to snapshotTrackRestoreState(SvpProtocol.TRACK_AUDIO),
+            SvpProtocol.TRACK_VIDEO to snapshotTrackRestoreState(SvpProtocol.TRACK_VIDEO),
+            SvpProtocol.TRACK_SUBTITLE to snapshotTrackRestoreState(SvpProtocol.TRACK_SUBTITLE),
+        )
         val position = player.currentPosition
         // Capture the play INTENT (playWhenReady), not isPlaying: called during
         // BUFFERING, isPlaying is false and would silently un-pause the user.

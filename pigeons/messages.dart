@@ -177,6 +177,10 @@ abstract class SecureVideoHostApi {
   /// Probes a (possibly encrypted) media file: container, duration, and
   /// per-stream codec/profile/resolution/fps/bitrate/sampleRate/channels.
   /// Decryption happens through the same CipherAdapter as playback.
+  ///
+  /// Runs on a background task queue so the blocking probe never stalls the
+  /// platform thread (ANR on slow storage / native schemes).
+  @TaskQueue(type: TaskQueueType.serialBackgroundThread)
   MediaInfo getMediaInfo(
       String path, String schemeType, Map<String?, Object?> schemeParams);
 
