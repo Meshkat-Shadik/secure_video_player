@@ -1,6 +1,6 @@
 name: secure_video_player
 description: "Encrypted-at-rest video playback with on-the-fly native decryption. Media3 (Android) + AVPlayer (iOS), pluggable ciphers, texture/platform-view rendering."
-version: 0.0.1
+version: 0.4.0
 homepage:
 
 environment:

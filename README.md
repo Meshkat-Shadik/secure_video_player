@@ -93,6 +93,22 @@ The plugin polls PiP state, so `value.isPipActive` also flips back to false
 when the user closes/expands the PiP window; `SecureVideoPlayer` hides its
 controls while PiP is active.
 
+**Prefer the widget-level entry point.** Android shrinks the *whole activity*
+into the PiP window, so calling `controller.enterPictureInPicture()` from an
+inline player captures the surrounding scaffold/appbar too. The widget hosts a
+bare fullscreen video route first, enters PiP, and pops the route again when
+PiP ends — the screen is restored exactly as it was:
+
+```dart
+final playerKey = GlobalKey<SecureVideoPlayerState>();
+SecureVideoPlayer(key: playerKey, controller: controller);
+
+await playerKey.currentState!.enterPictureInPicture();
+```
+
+On iOS the PiP window floats independently of the app UI, so the widget skips
+the host route and just enters PiP.
+
 ## Built-in schemes
 
 | Scheme | Use | Params |
