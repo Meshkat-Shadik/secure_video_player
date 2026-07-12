@@ -369,6 +369,12 @@ class PlayerInstance(
                 PlaybackException.ERROR_CODE_DRM_LICENSE_EXPIRED -> SvpProtocol.ERROR_DRM
             error.errorCode in PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED..
                 PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED -> SvpProtocol.ERROR_CORRUPT_STREAM
+            // Decoder failures and reads past EOF (truncated / tampered files)
+            // are all "the stream is broken" from the caller's point of view.
+            error.errorCode in PlaybackException.ERROR_CODE_DECODING_FAILED..
+                PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> SvpProtocol.ERROR_CORRUPT_STREAM
+            error.errorCode == PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE ->
+                SvpProtocol.ERROR_CORRUPT_STREAM
             else -> SvpProtocol.ERROR_UNKNOWN
         }
         events.success(mapOf(

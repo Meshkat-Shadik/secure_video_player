@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSourceException
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.TransferListener
 import java.io.Closeable
@@ -70,7 +71,16 @@ class CipherDataSource(
         } else {
             dataSpec.length
         }
-        if (bytesRemaining < 0) throw IOException("Position beyond end of source")
+        // A truncated file makes the extractor seek past EOF (e.g. an MP4 whose
+        // moov atom was cut off). Throw the typed exception so ExoPlayer reports
+        // ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE instead of a generic IO error,
+        // which onPlayerError maps to corruptStream.
+        if (bytesRemaining < 0) {
+            throw DataSourceException(
+                "Position beyond end of source",
+                DataSourceException.POSITION_OUT_OF_RANGE,
+            )
+        }
         opened = true
         return bytesRemaining
     }
