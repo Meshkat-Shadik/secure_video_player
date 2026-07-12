@@ -56,7 +56,7 @@ buffers small enough for 1 GB RAM phones.
 ```yaml
 dependencies:
   secure_video_player: 
-    git: ''
+    git: 'https://github.com/Meshkat-Shadik/secure_video_player.git'
 ```
 
 ```dart
