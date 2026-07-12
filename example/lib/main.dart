@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'sample_media.dart';
 import 'screens/buffer_screen.dart';
-import 'screens/dart_cipher_screen.dart';
 import 'screens/encrypt_play_screen.dart';
 import 'screens/error_cases_screen.dart';
 import 'screens/lifecycle_screen.dart';
@@ -87,12 +86,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
         'System notification (Android) / Now Playing (iOS) with live metadata',
         Icons.notifications_active,
         MediaControlsScreen.new,
-      ),
-      _Demo(
-        'Custom Dart cipher',
-        'Decrypt in pure Dart via CryptoScheme.dartProxy — no native code',
-        Icons.vpn_key,
-        DartCipherScreen.new,
       ),
       _Demo(
         'Screen awake',

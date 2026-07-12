@@ -16,7 +16,6 @@ class SampleMedia {
   static late final String plainPath;
   static late final String xorPath;
   static late final String aesPath;
-  static late final String customPath;
   static late final String truncatedPath;
   static late final String externalVttPath;
 
@@ -28,7 +27,6 @@ class SampleMedia {
     plainPath = '${root.path}/plain.mp4';
     xorPath = '${root.path}/xor.enc';
     aesPath = '${root.path}/aes.enc';
-    customPath = '${root.path}/custom.enc';
     truncatedPath = '${root.path}/truncated.enc';
     externalVttPath = '${root.path}/subs_external.vtt';
 
@@ -43,7 +41,6 @@ class SampleMedia {
 
     await _encryptIfMissing(xorPath, DemoCrypto.xorLegacy);
     await _encryptIfMissing(aesPath, DemoCrypto.aesCtr);
-    await _encryptIfMissing(customPath, DemoCrypto.customRepeatingXor);
 
     if (!File(truncatedPath).existsSync()) {
       final full = File(aesPath).readAsBytesSync();

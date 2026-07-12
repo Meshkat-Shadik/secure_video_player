@@ -15,17 +15,6 @@ enum MediaInfoProbe {
                               message: "File not found: \(path)", details: nil)
         }
 
-        // dartProxy dispatches its channel send to the main thread, which the
-        // semaphore below blocks — every chunk would time out and the main
-        // thread would freeze. Reject up front.
-        if schemeType == SvpProtocol.schemeDartProxy {
-            throw PigeonError(
-                code: SvpProtocol.errorPlatformNotSupported,
-                message: "getMediaInfo is not supported with the dartProxy scheme; "
-                    + "probe before encrypting or use a native scheme",
-                details: nil)
-        }
-
         let asset: AVURLAsset
         // Strong ref kept for the probe's lifetime — the loader is weak.
         var loader: CipherResourceLoaderDelegate?
@@ -53,8 +42,6 @@ enum MediaInfoProbe {
         asset.loadValuesAsynchronously(forKeys: ["tracks", "duration"]) {
             semaphore.signal()
         }
-        // TODO(review): move probe off the platform thread; the main-thread
-        // semaphore also risks ANR-like stalls for native schemes
         _ = semaphore.wait(timeout: .now() + 10)
 
         var error: NSError?

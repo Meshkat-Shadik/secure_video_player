@@ -4,9 +4,7 @@ import 'dart:typed_data';
 ///
 /// Every scheme serializes to `(type, params)` and is resolved natively by
 /// the `CipherRegistry`. Built-ins: [NoneScheme], [XorLegacyScheme],
-/// [AesCtrScheme], [ClearKeyScheme]. Custom ciphers implement a native
-/// `CipherAdapter`, register it under a name at app startup, and are
-/// referenced from Dart with [CryptoScheme.custom].
+/// [AesCtrScheme], [ClearKeyScheme].
 sealed class CryptoScheme {
   const CryptoScheme();
 
@@ -26,20 +24,6 @@ sealed class CryptoScheme {
   const factory CryptoScheme.clearKey({
     required Map<String, String> keys,
   }) = ClearKeyScheme;
-
-  const factory CryptoScheme.custom({
-    required String adapterName,
-    Map<String, Object?> params,
-  }) = CustomScheme;
-
-  /// A cipher implemented in pure Dart via a [DartCipherDelegate]. No native
-  /// code required: a built-in native adapter proxies each read chunk to Dart
-  /// over `secure_video_player/dart_cipher_<channelId>`. Register the delegate
-  /// with `DartCipher.register(channelId, delegate)` before use. See the
-  /// README "Custom encryption in Dart" section for the perf tradeoff.
-  const factory CryptoScheme.dartProxy({
-    required String channelId,
-  }) = DartProxyScheme;
 
   /// Wire identifier understood by the native side.
   String get type;
@@ -118,32 +102,4 @@ class ClearKeyScheme extends CryptoScheme {
 
   @override
   Map<String, Object?> get params => {'keys': keys};
-}
-
-/// A cipher whose encrypt/decrypt runs in Dart via a `DartCipherDelegate`,
-/// bridged by the built-in native `dartProxy` adapter. [channelId] must match
-/// the id passed to `DartCipher.register`.
-class DartProxyScheme extends CryptoScheme {
-  const DartProxyScheme({required this.channelId});
-
-  final String channelId;
-
-  @override
-  String get type => 'dartProxy';
-
-  @override
-  Map<String, Object?> get params => {'channelId': channelId};
-}
-
-/// A cipher registered natively via `CipherRegistry.register(adapterName)`.
-class CustomScheme extends CryptoScheme {
-  const CustomScheme({required this.adapterName, this.params = const {}});
-
-  final String adapterName;
-
-  @override
-  final Map<String, Object?> params;
-
-  @override
-  String get type => adapterName;
 }

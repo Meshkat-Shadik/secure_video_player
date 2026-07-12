@@ -37,8 +37,8 @@ enum CipherError: Error, LocalizedError {
     }
 }
 
-/// Name -> factory. Apps register custom ciphers in AppDelegate and reference
-/// them from Dart with CryptoScheme.custom(adapterName:).
+/// Name -> factory for the built-in schemes (none, xorLegacy, aesCtr).
+/// Resolved by wire scheme type from the `CryptoScheme` sent by Dart.
 public final class CipherRegistry {
     public static let shared = CipherRegistry()
     private var factories: [String: () -> CipherAdapter] = [:]

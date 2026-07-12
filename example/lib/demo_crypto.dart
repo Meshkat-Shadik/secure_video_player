@@ -23,13 +23,4 @@ class DemoCrypto {
       CryptoScheme.aesCtr(key: wrongKey, nonce: aesNonce);
 
   static const CryptoScheme xorLegacy = CryptoScheme.xorLegacy();
-
-  /// Registered natively in MainActivity.kt / AppDelegate.swift — see the
-  /// custom-cipher guide in the plugin README.
-  static const CryptoScheme customRepeatingXor = CryptoScheme.custom(
-    adapterName: 'repeatingXor',
-    params: {
-      'key': [0x5A, 0xC3, 0x0F, 0x99, 0x42]
-    },
-  );
 }

@@ -31,9 +31,8 @@ interface CipherAdapter {
 }
 
 /**
- * Name -> adapter factory. Apps register custom ciphers here (e.g. in
- * MainActivity.onCreate) and reference them from Dart with
- * CryptoScheme.custom(adapterName: "name").
+ * Name -> adapter factory for the built-in schemes (none, xorLegacy, aesCtr).
+ * Resolved by wire scheme type from the `CryptoScheme` sent by Dart.
  */
 object CipherRegistry {
     private val factories = mutableMapOf<String, () -> CipherAdapter>()

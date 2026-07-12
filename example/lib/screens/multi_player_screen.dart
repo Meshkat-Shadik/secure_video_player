@@ -25,7 +25,7 @@ class _MultiPlayerScreenState extends State<MultiPlayerScreen> {
       (SampleMedia.plainPath, const CryptoScheme.none()),
       (SampleMedia.xorPath, DemoCrypto.xorLegacy),
       (SampleMedia.aesPath, DemoCrypto.aesCtr),
-      (SampleMedia.customPath, DemoCrypto.customRepeatingXor),
+      (SampleMedia.plainPath, const CryptoScheme.none()),
     ];
     for (var i = 0; i < 4; i++) {
       controllers[i]

@@ -19,13 +19,6 @@ public class SecureVideoPlayerPlugin: NSObject, FlutterPlugin, SecureVideoHostAp
         SecureVideoHostApiSetup.setUp(
             binaryMessenger: registrar.messenger(), api: instance)
 
-        // Built-in adapter that proxies chunks to a pure-Dart DartCipherDelegate.
-        // Registered here because it needs the engine's BinaryMessenger.
-        let messenger = registrar.messenger()
-        CipherRegistry.shared.register(SvpProtocol.schemeDartProxy) {
-            DartProxyCipherAdapter(messenger: messenger)
-        }
-
         let cryptoChannel = FlutterEventChannel(
             name: SvpProtocol.channelCryptoEvents,
             binaryMessenger: registrar.messenger())

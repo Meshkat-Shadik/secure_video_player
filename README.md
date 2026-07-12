@@ -6,8 +6,7 @@ plaintext never touches disk. Encrypt, decrypt, and play, all from Dart.
 | | Android | iOS |
 |---|---|---|
 | Engine | Media3 1.10.1 (ExoPlayer) custom `DataSource` | AVPlayer + `AVAssetResourceLoaderDelegate` |
-| AES-CTR / XOR-legacy / custom ciphers | ✅ | ✅ |
-| Pure-Dart ciphers (`dartProxy`) | ✅ | ✅ |
+| AES-CTR / XOR-legacy ciphers | ✅ | ✅ |
 | ClearKey DRM (CENC) | ✅ | ❌ `platformNotSupported` |
 | Texture & PlatformView rendering | ✅ | ✅ |
 | Tracks (audio/subtitle/quality) | ✅ (+ external SRT/VTT) | ✅ embedded only |
@@ -30,8 +29,6 @@ buffers small enough for 1 GB RAM phones.
 - [The controller](#the-controller)
 - [The player widget](#the-player-widget)
 - [Crypto schemes](#crypto-schemes)
-  - [Custom native cipher](#custom-native-cipher)
-  - [Custom Dart cipher (dartProxy)](#custom-dart-cipher-dartproxy)
 - [Feature guide](#feature-guide)
   - [Subtitles: embedded, sideloaded, and pure-Dart SRT overlay](#subtitles)
   - [Picture-in-picture](#picture-in-picture)
@@ -232,8 +229,6 @@ with native controls. Pass `showControls: false` to avoid double controls.
 | `CryptoScheme.xorLegacy()` | Hulkenstein backward compat (skip 512 B, XOR 256 B with `0xAB`) | `skipOffset`, `corruptionSize`, `key` |
 | `CryptoScheme.aesCtr(...)` | **recommended** — real encryption, O(1) seek | `key` (16/32 B), `nonce` (8 B) |
 | `CryptoScheme.clearKey(...)` | CENC-packaged MP4/DASH, Android only | `keys` (base64url kid→k) |
-| `CryptoScheme.custom(...)` | your own **native** cipher | `adapterName` + free-form params |
-| `CryptoScheme.dartProxy(...)` | your own cipher in **pure Dart**, no native code | `channelId` |
 
 ```dart
 // Recommended: AES-128/256 in CTR mode. Seekable, real confidentiality.
@@ -248,123 +243,10 @@ final scheme = CryptoScheme.aesCtr(
 > files (classic two-time-pad break). `xorLegacy` is obfuscation only, for
 > migrating existing Hulkenstein content.
 
-### Custom native cipher
-
-Video decryption runs in the native read loop (MB/s), so custom ciphers are
-**native classes registered by name**. The transform must be
-position-addressable — byte *N* decrypts without reading `0..N-1` (CTR
-keystreams, positional XOR qualify; CBC does not). The **same** transform powers
-`SecureVideoEncryptor`; keystream/XOR ciphers are involutions, so encrypt ==
-decrypt.
-
-**1. Implement the adapter.**
-
-Kotlin (`android/.../MainActivity.kt`):
-
-```kotlin
-class MyCipher : CipherAdapter {
-    private lateinit var key: ByteArray
-    override fun init(params: Map<String, Any?>) {
-        key = (params["key"] as List<*>).map { (it as Number).toByte() }.toByteArray()
-    }
-    override fun transform(buffer: ByteArray, offset: Int, length: Int, filePosition: Long) {
-        for (i in 0 until length) {
-            val k = key[((filePosition + i) % key.size).toInt()]
-            buffer[offset + i] = (buffer[offset + i].toInt() xor k.toInt()).toByte()
-        }
-    }
-}
-```
-
-Swift (`ios/Runner/AppDelegate.swift`):
-
-```swift
-final class MyCipher: CipherAdapter {
-  private var key: [UInt8] = []
-  func initialize(params: [String: Any?]) throws {
-    key = (params["key"] as! [Any]).map { UInt8(truncating: $0 as! NSNumber) }
-  }
-  func transform(_ buffer: inout Data, filePosition: Int64) {
-    let n = Int64(key.count)
-    buffer.withUnsafeMutableBytes { raw in
-      let b = raw.bindMemory(to: UInt8.self)
-      for i in 0..<b.count { b[i] ^= key[Int((filePosition + Int64(i)) % n)] }
-    }
-  }
-}
-```
-
-**2. Register at startup.**
-
-```kotlin
-CipherRegistry.register("myCipher") { MyCipher() }              // MainActivity.onCreate
-```
-```swift
-CipherRegistry.shared.register("myCipher") { MyCipher() }       // didFinishLaunching
-```
-
-**3. Use from Dart.**
-
-```dart
-const scheme = CryptoScheme.custom(
-  adapterName: 'myCipher',
-  params: {'key': [0x5A, 0xC3, 0x0F]},   // channel-serializable values only
-);
-await SecureVideoEncryptor.encrypt(inPath, outPath, scheme);
-await controller.initialize(source: VideoSource.file(outPath), scheme: scheme);
-```
-
-An unregistered name throws `SecureVideoException(adapterNotRegistered)`. The
-example app's `repeatingXor` adapter is a working reference.
-
-### Custom Dart cipher (dartProxy)
-
-Don't want to touch Kotlin/Swift? Implement the cipher in pure Dart. A built-in
-native adapter forwards every read chunk to your `DartCipherDelegate` over a
-dedicated channel. Same position-addressable rule; return exactly `chunk.length`
-bytes.
-
-```dart
-/// Repeating-key XOR — an involution, so one delegate encrypts and decrypts.
-class XorDelegate extends DartCipherDelegate {
-  XorDelegate(this.key);
-  final List<int> key;
-
-  Uint8List _xor(Uint8List chunk, int fileOffset) {
-    final out = Uint8List(chunk.length);
-    for (var i = 0; i < chunk.length; i++) {
-      out[i] = chunk[i] ^ key[(fileOffset + i) % key.length];
-    }
-    return out;
-  }
-
-  @override
-  Uint8List decrypt(Uint8List chunk, int fileOffset) => _xor(chunk, fileOffset);
-  @override
-  Uint8List encrypt(Uint8List chunk, int fileOffset) => _xor(chunk, fileOffset);
-}
-
-// 1. Register once, before playback. Keep the handle to unregister.
-final registration = DartCipher.register('myXor', XorDelegate([0x5A, 0xC3, 0x0F]));
-
-// 2. Reference it with the SAME channelId.
-const scheme = CryptoScheme.dartProxy(channelId: 'myXor');
-await SecureVideoEncryptor.encrypt(inPath, outPath, scheme);
-await controller.initialize(source: VideoSource.file(outPath), scheme: scheme);
-
-// 3. When done (e.g. in dispose):
-registration.dispose();
-```
-
-**Performance.** Every read chunk round-trips to the Dart isolate. Fine for
-moderate bitrates; native adapters remain the fast path for 4K. Keep the
-delegate light — heavy synchronous work stutters playback. `getMediaInfo`
-can't probe over a Dart cipher (it may run on the main thread) and fails fast
-with a clear error rather than deadlocking.
-
-**Multi-engine.** `dartProxy` binds to the most recently attached engine and is
-**not supported** in concurrent multi-engine apps. Use a native
-`CryptoScheme.custom` adapter there.
+The transform runs in the native read loop and must be position-addressable —
+byte *N* decrypts without reading `0..N-1` (CTR keystreams and positional XOR
+qualify; CBC does not). The **same** transform powers `SecureVideoEncryptor`;
+keystream/XOR ciphers are involutions, so encrypt == decrypt.
 
 ---
 
@@ -585,8 +467,6 @@ for (final s in info.streams) {
 }
 ```
 
-Not available over a `dartProxy` scheme (fails fast — probe with a native scheme).
-
 ### Tracks & track selection
 
 ```dart
@@ -654,7 +534,7 @@ Everything throws a typed `SecureVideoException` with a `SecureVideoErrorCode`:
 | `invalidKey` | wrong/short key material |
 | `fileNotFound` | source path/URI missing |
 | `corruptStream` | undecodable bytes (wrong key, truncated, tampered) |
-| `adapterNotRegistered` | `custom` adapter name not registered natively |
+| `adapterNotRegistered` | unknown scheme type with no native cipher adapter |
 | `drmError` | ClearKey / DRM failure |
 | `platformNotSupported` | feature unavailable on this platform |
 | `disposed` | controller used after dispose |
@@ -682,12 +562,43 @@ ValueListenableBuilder<SecureVideoValue>(
 
 ## Example app
 
-`example/` is a gallery grouped into **Feature demos** (progress triggers +
-sleep timer, SRT overlay, media controls, custom Dart cipher, screen awake,
+`example/lib/main.dart` is the gallery shell: it wires the menu, preps sample
+media, and routes to the actual feature screens. The real implementations live
+in `example/lib/screens/*.dart`, with shared demo crypto in
+`example/lib/demo_crypto.dart` and sample file preparation in
+`example/lib/sample_media.dart`.
+
+The gallery is grouped into **Feature demos** (progress triggers + sleep
+timer, SRT overlay, media controls, screen awake,
 PiP/background/secure), **Playback & crypto** (scheme matrix, encrypt→play,
 tracks, texture vs platformView), and **Stress & edge cases** (error cases,
-4-player grid, list recycling, seek hammer, buffer tuning). Every screen shows a
-PASS/FAIL chip.
+4-player grid, list recycling, seek hammer, buffer tuning). Every screen shows
+a PASS/FAIL chip.
+
+Key entry points:
+
+- [example/lib/main.dart](example/lib/main.dart) - gallery navigation and sample prep
+- [example/lib/demo_crypto.dart](example/lib/demo_crypto.dart) - demo cipher presets
+- [example/lib/sample_media.dart](example/lib/sample_media.dart) - sample file generation
+
+Gallery map:
+
+| Demo | Implementation |
+|---|---|
+| Progress triggers + sleep timer | [example/lib/screens/progress_triggers_sleep_timer_screen.dart](example/lib/screens/progress_triggers_sleep_timer_screen.dart) |
+| SRT subtitles + delay | [example/lib/screens/srt_subtitles_screen.dart](example/lib/screens/srt_subtitles_screen.dart) |
+| Media controls | [example/lib/screens/media_controls_screen.dart](example/lib/screens/media_controls_screen.dart) |
+| Screen awake | [example/lib/screens/screen_awake_screen.dart](example/lib/screens/screen_awake_screen.dart) |
+| PiP / background / secure | [example/lib/screens/lifecycle_screen.dart](example/lib/screens/lifecycle_screen.dart) |
+| Scheme matrix | [example/lib/screens/scheme_matrix_screen.dart](example/lib/screens/scheme_matrix_screen.dart) |
+| Encrypt → play | [example/lib/screens/encrypt_play_screen.dart](example/lib/screens/encrypt_play_screen.dart) |
+| Tracks & subtitles | [example/lib/screens/tracks_screen.dart](example/lib/screens/tracks_screen.dart) |
+| Texture vs PlatformView | [example/lib/screens/render_toggle_screen.dart](example/lib/screens/render_toggle_screen.dart) |
+| Error cases | [example/lib/screens/error_cases_screen.dart](example/lib/screens/error_cases_screen.dart) |
+| 4-player grid | [example/lib/screens/multi_player_screen.dart](example/lib/screens/multi_player_screen.dart) |
+| List recycling stress | [example/lib/screens/list_stress_screen.dart](example/lib/screens/list_stress_screen.dart) |
+| Seek hammer + speed + loop | [example/lib/screens/seek_stress_screen.dart](example/lib/screens/seek_stress_screen.dart) |
+| Buffer tuning (low RAM) | [example/lib/screens/buffer_screen.dart](example/lib/screens/buffer_screen.dart) |
 
 ```bash
 cd example && flutter run

@@ -1,7 +1,7 @@
 /// Encrypted-at-rest video playback with on-the-fly native decryption.
 ///
 /// Android: Media3 1.10.1 custom DataSource. iOS: AVPlayer +
-/// AVAssetResourceLoaderDelegate. See README for the custom-cipher guide.
+/// AVAssetResourceLoaderDelegate.
 library;
 
 export 'src/controller.dart'
@@ -16,12 +16,6 @@ export 'src/controller.dart'
         setScreenCaptureProtection;
 export 'src/messages.g.dart' show MediaInfo, MediaStreamInfo;
 export 'src/crypto_scheme.dart';
-export 'src/dart_cipher.dart'
-    show
-        DartCipher,
-        DartCipherDelegate,
-        DartCipherRegistration,
-        kDartCipherChannelPrefix;
 export 'src/encryptor.dart';
 export 'src/errors.dart';
 export 'src/player_options.dart';

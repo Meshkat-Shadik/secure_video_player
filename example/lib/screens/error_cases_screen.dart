@@ -31,12 +31,6 @@ class ErrorCasesScreen extends StatelessWidget {
         DemoCrypto.aesCtr,
         SecureVideoErrorCode.fileNotFound,
       ),
-      (
-        'Unregistered adapter',
-        SampleMedia.aesPath,
-        const CryptoScheme.custom(adapterName: 'noSuchCipher'),
-        SecureVideoErrorCode.adapterNotRegistered,
-      ),
     ];
 
     return Scaffold(

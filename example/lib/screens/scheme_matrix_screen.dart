@@ -16,7 +16,6 @@ class SchemeMatrixScreen extends StatelessWidget {
       ('Plain', SampleMedia.plainPath, const CryptoScheme.none()),
       ('XOR legacy', SampleMedia.xorPath, DemoCrypto.xorLegacy),
       ('AES-CTR', SampleMedia.aesPath, DemoCrypto.aesCtr),
-      ('Custom', SampleMedia.customPath, DemoCrypto.customRepeatingXor),
     ];
 
     return DefaultTabController(

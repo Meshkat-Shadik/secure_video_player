@@ -31,12 +31,6 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
     private var nextPlayerId = 1L
     private val cryptoEvents = QueuingEventSink()
 
-    // The dartProxy factory this instance registered into the process-global
-    // CipherRegistry. It captures THIS engine's BinaryMessenger, so it must be
-    // unregistered on detach. dartProxy binds to the most recently attached
-    // engine — multi-engine setups are unsupported today (see README).
-    private var dartProxyFactory: (() -> CipherAdapter)? = null
-
     private companion object {
         const val TAG = "SecureVideoPlayer"
     }
@@ -76,13 +70,6 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         context = flutterPluginBinding.applicationContext
         SecureVideoHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
 
-        // Built-in adapter that proxies chunks to a pure-Dart DartCipherDelegate.
-        // Registered here because it needs the engine's BinaryMessenger.
-        val messenger = flutterPluginBinding.binaryMessenger
-        val factory: () -> CipherAdapter = { DartProxyCipherAdapter(messenger) }
-        dartProxyFactory = factory
-        CipherRegistry.register(SvpProtocol.SCHEME_DART_PROXY, factory)
-
         EventChannel(flutterPluginBinding.binaryMessenger, SvpProtocol.CHANNEL_CRYPTO_EVENTS)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(args: Any?, sink: EventChannel.EventSink) {
@@ -100,10 +87,6 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         SecureVideoHostApi.setUp(binding.binaryMessenger, null)
-        // Only removes it if this engine's factory is still the current one, so
-        // a later-attached engine's dartProxy registration is left intact.
-        dartProxyFactory?.let { CipherRegistry.unregister(SvpProtocol.SCHEME_DART_PROXY, it) }
-        dartProxyFactory = null
         players.values.toList().forEach { it.dispose() }
         players.clear()
         eventChannels.values.forEach { it.setStreamHandler(null) }
@@ -279,16 +262,10 @@ class SecureVideoPlayerPlugin : FlutterPlugin, ActivityAware, SecureVideoHostApi
         schemeType: String,
         schemeParams: Map<String?, Any?>,
     ): MediaInfo {
-        if (schemeType == SvpProtocol.SCHEME_DART_PROXY) {
-            throw FlutterError(SvpProtocol.ERROR_PLATFORM_NOT_SUPPORTED,
-                "getMediaInfo is not supported with the dartProxy scheme; " +
-                    "probe before encrypting or use a native scheme")
-        }
         if (!CipherRegistry.isRegistered(schemeType)) {
             throw FlutterError(SvpProtocol.ERROR_ADAPTER_NOT_REGISTERED,
                 "No CipherAdapter registered for '$schemeType'")
         }
-        // TODO(review): move probe off the platform thread (Pigeon TaskQueue) to avoid ANR on slow storage
         return MediaInfoProbe.probe(
             path, schemeType,
             schemeParams.entries.associate { (k, v) -> (k ?: "") to v },
