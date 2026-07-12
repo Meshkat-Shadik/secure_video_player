@@ -20,7 +20,9 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.FileDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
 import androidx.media3.exoplayer.drm.FrameworkMediaDrm
@@ -30,6 +32,8 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.source.SingleSampleMediaSource
+import androidx.media3.exoplayer.text.TextOutput
+import androidx.media3.exoplayer.text.TextRenderer
 import androidx.media3.session.MediaSession
 import io.flutter.plugin.common.EventChannel
 import io.flutter.view.TextureRegistry
@@ -155,7 +159,29 @@ class PlayerInstance(
             .setBackBuffer(0, false)
             .build()
 
-        player = ExoPlayer.Builder(context)
+        // Sideloaded subtitles (SingleSampleMediaSource) deliver raw text/vtt
+        // and text/x-subrip samples to the TextRenderer. Since media3 1.4 the
+        // renderer parses subtitles during extraction by default and refuses
+        // legacy samples ("Legacy decoding is disabled, can't handle text/vtt")
+        // unless legacy decoding is enabled. In 1.10 that flag lives on
+        // TextRenderer itself (not DefaultRenderersFactory), so enable it on
+        // each text renderer the factory builds. Container-embedded subs parse
+        // during extraction and are unaffected.
+        val renderersFactory = object : DefaultRenderersFactory(context) {
+            override fun buildTextRenderers(
+                context: Context,
+                output: TextOutput,
+                outputLooper: Looper,
+                extensionRendererMode: Int,
+                out: ArrayList<Renderer>,
+            ) {
+                super.buildTextRenderers(
+                    context, output, outputLooper, extensionRendererMode, out)
+                out.forEach { if (it is TextRenderer) it.experimentalSetLegacyDecodingEnabled(true) }
+            }
+        }
+
+        player = ExoPlayer.Builder(context, renderersFactory)
             .setLoadControl(loadControl)
             .setSeekBackIncrementMs(5000)
             .setSeekForwardIncrementMs(5000)
